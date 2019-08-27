@@ -2,81 +2,209 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Net;
 using System.Threading;
+using NUnit.Framework;
 
-namespace FinamDownloader {
-    class Program {
-        static void Main(string[] args) {
 
-            
-            var dtBeg = new DateTime(2008, 03, 05);
+namespace FinamDownloader
+{
+    internal partial class Program
+    {
+        private static void Main()
+        {
+            const string dir = @"d:\SyncDirs\main\pdata\visualstudio\FinamDownloader\icharts_analyze\";
+            const string fn = "icharts.js";
 
-            var writer = new StreamWriter("urls7.2.txt", false);
-            using (var reader = new StreamReader("sber_passed7.txt")) {
-                while (!reader.EndOfStream) {
-                    var date = reader.ReadLine();
-                    if (date == null || date.Length != 8) {
-                        throw new Exception("");
+            var icharts = new Icharts(dir + fn);
+            var issuers = icharts.Issuers;
+
+
+            var ch = "";
+            do
+            {
+                Console.WriteLine(@"1 - поиск инструмента (содержит подстроку)");
+                Console.WriteLine(@"2 - поиск инструмента (равно строке)");
+                Console.WriteLine(@"3 - загрузка фьючерса");
+
+                ch = Console.ReadLine();
+            } while (ch != "1" && ch != "2" && ch != "3");
+
+            switch (Convert.ToInt32(ch))
+            {
+                case 1:
+                    FindIssuers(issuers);
+                    break;
+
+                case 2:
+                    FindIssuers(issuers, true, false);
+                    break;
+
+                case 3:
+                    DownloadFuture(issuers, true);
+                    break;
+
+                default:
+                    break;
+            }
+
+
+            Console.ReadKey();
+        }
+
+        // требуем равенство
+        private static void FindIssuers(List<FinamIssuer> issuers, bool equalityRequired = false, bool fullDescr = true)
+        {
+            Console.Write(@"enter name of issuer: ");
+            var name = Console.ReadLine();
+            Assert.IsFalse(string.IsNullOrWhiteSpace(name));
+
+            var issuersList = issuers.FindAll(issuer =>
+                equalityRequired ? name == issuer.Name : issuer.Name.Contains(name));
+            Console.WriteLine($"issuersList.Count  = {issuersList.Count}");
+
+            var bCh = "";
+            const int max = 50;
+
+            if (issuersList.Count > max)
+            {
+                Console.WriteLine(@"do you want to print all of issuersList names? (Y = yes, anyKey = no)");
+                bCh = Console.ReadLine()?.ToUpper();
+            }
+
+            if (issuersList.Count <= max || bCh == "Y")
+            {
+                foreach (var issuer in issuersList)
+                {
+                    Console.WriteLine(issuer.GetDescription(fullDescr));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Загрузка тиков по фьючам
+        /// </summary>
+        /// <param name="issuers"></param>
+        /// <param name="fSkipUnfinished">skip loading unfinished futures</param>
+        private static void DownloadFuture(List<FinamIssuer> issuers, bool fSkipUnfinished)
+        {
+            const string historyDataDir = @"c:\Users\admin\Documents\HistoryData\";
+
+            Console.Write(@"Enter future name (for example: BR, MX, MM, SR, etc.): ");
+            var futNameBase = Console.ReadLine();
+            Assert.IsTrue(futNameBase != null && futNameBase.Length == 2);
+
+            const int futCodeLen = 4; // for example: BRU9, MXZ7, etc.
+
+            futNameBase += '-'; // "BR" -> "BR-"
+            var futList = issuers.FindAll(issuer =>
+                issuer.Name.Length >= futNameBase.Length &&
+                issuer.Name.Substring(0, futNameBase.Length) == futNameBase &&
+                futCodeLen == issuer.Code.Length);
+
+
+            var saveDirBase = historyDataDir + futNameBase + "\\";
+            Directory.CreateDirectory(saveDirBase);
+
+            // в файл writer будут записываться сформированные urls
+            var curDt = DateTime.Now;
+            var fdUrlsLog = historyDataDir + $"FD_urls_{curDt:yyyyMMdd_HHmmss}.txt";
+            var writer = new StreamWriter(fdUrlsLog, false) {AutoFlush = true};
+
+            foreach (var fut in futList)
+            {
+                /* приставка "SPFB.", которую автоматически формирует сайт финама при запросе,
+                 не обязательна для корректного скачивания по сформированным urls */
+                var code = fut.Name.Split('(')[0]; // "BR-1.09(BRF9)" -> "BR-1.09"
+
+                // дата экспирации
+                var expDateStr = code.Substring(futNameBase.Length).Split('.'); // "BR-1.09" -> "1.09" -> { "1", "09" }
+                var expDateM = Convert.ToInt32(expDateStr[0]);
+                var expDateY = 2000 + Convert.ToInt32(expDateStr[1]);
+
+                // для каждого фьюча запросим его дневные свечи за период [3 года до экспирации; 1 мес после экспирации]
+                var expDt = new DateTime(expDateY, expDateM, 1);
+                var dtF = expDt.AddYears(-3); // Начальная дата: 3 года до экспирации
+                var dtT = expDt.AddMonths(1); // Конечная дата: следующий месяц после экспирации
+
+
+                // если фьючерс еще не завершен, то пропускаем загрузку
+                if (fSkipUnfinished && curDt < dtT)
+                {
+                    continue;
+                }
+
+
+                // имя результирующего файла (д.б. без расширения) для дневных свечей по каждому фьючерсу
+                var rezultFnD1 = $"{code}_{dtF:yyMMdd}_{dtT:yyMMdd}";
+
+
+                var url = GetUrl(dtF, dtT, rezultFnD1, code, fut, TimeFrame.Day, DataFormat.CandleOptimal, at: ColumnHeaderNeed.No);
+                writer.WriteLine(url);
+
+                var ffn = saveDirBase + rezultFnD1 + ".txt";
+                while (!TryDownload(url, ffn))
+                {
+                }
+                Console.Write(code);
+
+
+                // теперь надо прочитать скачанный файл, и скачать за каждую доступную дату тики
+                using (var reader = new StreamReader(ffn))
+                {
+                    var saveDir2 = saveDirBase + $@"{code}\";
+                    Directory.CreateDirectory(saveDir2);
+
+                    //var writer2 = new StreamWriter(saveDir2 + "urls.txt", false) { AutoFlush = true };
+
+                    while (!reader.EndOfStream)
+                    {
+                        var str = reader.ReadLine();
+
+                        // пустая строка не предусмотрена
+                        Assert.IsNotNull(str);
+
+                        var strDate = str.Split('\t')[0];
+
+                        var year = Convert.ToInt32(strDate.Substring(0, 4)); // "2019" -> 2019
+                        var month = Convert.ToInt32(strDate.Substring(4, 2)); // "06" -> 6
+                        var day = Convert.ToInt32(strDate.Substring(6, 2)); // "01 -> 1
+
+                        var dtTick = new DateTime(year, month, day);
+
+                        // скачиваем тиковые данные за только за завершенные периоды
+                        if (curDt <= dtTick)
+                        {
+                            continue;
+                        }
+
+                        // имя результирующего файла для тиковых данных за конкретную дату
+                        var rezultFnTick = $"{code}_{dtTick:yyMMdd}_{dtTick:yyMMdd}";
+
+                        var urlTick = GetUrl(dtTick, dtTick, rezultFnTick, code, fut, TimeFrame.Tick, DataFormat.TickOptimal);
+                        writer.WriteLine(urlTick);
+
+                        var ffn2 = saveDir2 + rezultFnTick + ".txt";
+                        while (!TryDownload(urlTick, ffn2))
+                        {
+                        }
+                        Console.Write(".");
                     }
-
-                    var dateShort = date.Substring(2, 6);
-
-
-                    var strYear = date.Substring(0, 4);
-                    var strMonth = date.Substring(4, 2);
-                    var strDay = date.Substring(6, 2);
-
-                    var year = Convert.ToInt32(strYear);
-                    var month = Convert.ToInt32(strMonth);
-                    var day = Convert.ToInt32(strDay);
-
-                    var dtCur = new DateTime(year, month, day);
-                    if (new DateTime(year, month, day) < dtBeg) {
-                        continue;
-                    }
-
-
-
-
-                    var rezultFilename = string.Format("SBER_{0}_{0}", dateShort);
-
-                    var url = string.Format("http://export.finam.ru/" +
-                                            "{0}.txt?market=1&em=3&code=SBER&apply=0&" +
-                                            "df={1}&mf={2}&yf={3}&from={4}.{5}.{6}&" +
-                                            "dt={1}&mt={2}&yt={3}&to={4}.{5}.{6}&" +
-                                            $"p={TimeFrame.Tick}&" + // Таймфрейм (для TICK = 1; M1=2; M5=3; M10=4; M15=5; M30=6; H1=7; D1=8; W1=9; M1=10)
-                                            "f ={0}&" + // Имя сформированного файла GBPUSD_141201_141206
-                                            "e=.txt&" + // Расширение сформированного файла: ".txt" или ".csv"
-                                            "cn=SBER&" + // Имя контракта
-                                            $"dtf={DateFormat.YYYYMMDD}&" + // Номер формата дат
-                                            $"tmf={TimeFormat.HHMMSS}&" + // Номер формата времени
-                                            $"MSOR={CandleTime.Open}&" + // Время свечи (0 - open; 1 - close)
-                                            "mstime=on&" + // Московское время	on
-                                            "mstimever=1&" + // Коррекция часового пояса
-                                            $"sep={FieldSeparator.Tab}&" + // Разделитель полей (запятая - 1, точка - 2, точка с запятой - 3, табуляция - 4, пробел - 5)
-                                            $"sep2={BitSeparator.None}&" + // Разделитель разрядов
-                                            "datf=12&" + // Формат записи в файл
-                                            "at=1", // Нужны ли заголовки столбцов
-                        rezultFilename, day, month - 1, year, strDay, strMonth, strYear);
-
-                    Console.WriteLine(rezultFilename);
-                    writer.WriteLine(url);
-
-                    var saveDir = @"c:\Users\admin\Documents\HistoryData\SBER\";
-                    // wc.DownloadFile(url, saveDir + rezultFilename + ".txt");
-
-                    while (!TryDownload(url, saveDir + rezultFilename + ".txt")) { }
+                    Console.Write('\n');
                 }
             }
 
             writer.Close();
         }
 
+        /// <summary>
+        /// Попытка выполнить загрузку (true - успешно, false - ошибка)
+        /// </summary>
         public static bool TryDownload(string url, string fn)
         {
+            return true;
+
+            // результат выполнения загрузки
             var res = true;
 
             var wc = new WebClient();
@@ -94,231 +222,54 @@ namespace FinamDownloader {
             return res;
         }
 
-        /// <summary>
-        /// Таймфрейм (для TICK = 1; M1=2; M5=3; M10=4; M15=5; M30=6; H1=7; D1=8; W1=9; M1=10)
-        /// </summary>
-        enum TimeFrame
+        private static string GetUrl(DateTime dtF, DateTime dtT, string rezultFn, string code, FinamIssuer issuer, TimeFrame tf,
+            DataFormat datf = DataFormat.CandleAllParam,
+            DateFormat dtf = DateFormat.YYYYMMDD,
+            TimeFormat tmf = TimeFormat.HHMMSS,
+            CandleTime ct = CandleTime.Open,
+            FieldSeparator fs = FieldSeparator.Tab,
+            BitSeparator bs = BitSeparator.None,
+            ColumnHeaderNeed at = ColumnHeaderNeed.Yes)
         {
-            /// <summary>
-            /// Тики
-            /// </summary>
-            Tick = 1,
-            /// <summary>
-            /// 1 Минутный
-            /// </summary>
-            M1 = 2,
-            /// <summary>
-            /// 5 минутный
-            /// </summary>
-            M5 = 3,
-            /// <summary>
-            /// 10 минутный
-            /// </summary>
-            M10 = 4,
-            /// <summary>
-            /// 15 минутный
-            /// </summary>
-            M15 = 5,
-            /// <summary>
-            /// 30 минутный
-            /// </summary>
-            M30 = 6,
-            /// <summary>
-            /// Часовой
-            /// </summary>
-            H1 = 7,
-            /// <summary>
-            /// Дневной
-            /// </summary>
-            Day = 8,
-            /// <summary>
-            /// Недельный
-            /// </summary>
-            Week = 9,
-            /// <summary>
-            /// Месяц
-            /// </summary>
-            Month = 10
-        }
-
-        /// <summary>
-        /// Разделитель полей (запятая - 1, точка - 2, точка с запятой - 3, табуляция - 4, пробел - 5)
-        /// </summary>
-        enum FieldSeparator
-        {
-            /// <summary>
-            /// запятая
-            /// </summary>
-            Comma = 1,
-            /// <summary>
-            /// точка
-            /// </summary>
-            Dot = 2,
-            /// <summary>
-            /// точка с запятой
-            /// </summary>
-            Semicolon = 3,
-            /// <summary>
-            /// табуляция
-            /// </summary>
-            Tab = 4,
-            /// <summary>
-            /// пробел
-            /// </summary>
-            Space = 5
-        }
-
-        /// <summary>
-        /// Разделитель разрядов
-        /// </summary>
-        enum BitSeparator
-        {
-            /// <summary>
-            /// нет
-            /// </summary>
-            None = 1,
-            /// <summary>
-            /// точка (.)
-            /// </summary>
-            Dot = 2,
-            /// <summary>
-            /// запятая (,)
-            /// </summary>
-            Comma = 3,
-            /// <summary>
-            /// пробел ( )
-            /// </summary>
-            Space = 4,
-            /// <summary>
-            /// кавычка (')
-            /// </summary>
-            Quote = 5
+            Assert.IsTrue(tf == TimeFrame.Tick && datf == DataFormat.TickOptimal ||
+                          tf != TimeFrame.Tick && datf != DataFormat.TickOptimal);
 
 
-        }
+            // генерируем url
+            var url = "http://export.finam.ru/" +
+                      $"{rezultFn}.txt?" +
+                      $"market={issuer.Market}&" + // Номер рынка
+                      $"em={issuer.Id}&" + // Номер инструмента
+                      $"code={code}&" + // Тикер инструмента
+                      $"apply=0&" + // todo ?
 
-        /// <summary>
-        /// Формат записи в файл (datf лучше всего задавать равным 11, для всех остальных таймфреймов – 5.)
-        /// </summary>
-        enum Template
-        {
-            /// <summary>
-            /// TICKER, PER, DATE, TIME, OPEN, HIGH, LOW, CLOSE, VOL
-            /// </summary>
-            CandleAllParam = 1,
-            /// <summary>
-            /// TICKER, PER, DATE, TIME, OPEN, HIGH, LOW, CLOSE
-            /// </summary>
-            CandleAllParamNoVol = 2,
-            /// <summary>
-            /// TICKER, PER, DATE, TIME, CLOSE, VOL
-            /// </summary>
-            CandleOnlyClose = 3,
-            /// <summary>
-            /// TICKER, PER, DATE, TIME, CLOSE
-            /// </summary>
-            CandleOnlyCloseNoVol = 4,
-            /// <summary>
-            /// DATE, TIME, OPEN, HIGH, LOW, CLOSE, VOL
-            /// </summary>
-            CandleOptimal = 5,
-            /// <summary>
-            /// DATE, TIME, LAST, VOL, ID, OPER
-            /// </summary>
-            TickOptimal = 6
-        }
+                      $"df={dtF.Day}&" + // Начальная дата, номер дня (1-31)
+                      $"mf={dtF.Month - 1}&" + // Начальная дата, номер месяца (0-11)
+                      $"yf={dtF.Year}&" + // Начальная дата, год
+                      $"from={dtF:dd.MM.yyyy}&" + // Начальная дата в формате "ДД.ММ.ГГГГ" (здесь месяцы от 1 до 12)
 
-        /// <summary>
-        /// Время свечи (0 - open; 1 - close)
-        /// </summary>
-        enum CandleTime{
-            /// <summary>
-            /// Время свечи = времени ее начала
-            /// </summary>
-            Open,
-            /// <summary>
-            /// Время свечи = времени ее завершения
-            /// </summary>
-            Close
-        }
+                      $"dt={dtT.Day}&" + // Конечная дата, номер дня (1-31)
+                      $"mt={dtT.Month - 1}&" + // Конечная дата, номер месяца (0-11)
+                      $"yt={dtT.Year}&" + // Конечная дата, год
+                      $"to={dtT:dd.MM.yyyy}&" + // Конечная дата в формате "ДД.ММ.ГГГГ" (здесь месяцы от 1 до 12)
 
+                      $"p={(int) tf}&" + // Таймфрейм
+                      $"f={rezultFn}&" + // Имя сформированного файла
+                      $"e=.txt&" + // Расширение сформированного файла: ".txt" или ".csv"
+                      $"cn={code}&" + // Имя контракта
 
-        /// <summary>
-        /// Формат даты
-        /// </summary>
-        enum DateFormat
-        {
-            /// <summary>
-            /// ггггммдд
-            /// </summary>
-            YYYYMMDD = 1,
-            /// <summary>
-            /// ггммдд
-            /// </summary>
-            YYMMDD = 2,
-            /// <summary>
-            /// ддммгг
-            /// </summary>
-            DDMMYY = 3,
-            /// <summary>
-            /// дд/мм/гг
-            /// </summary>
-            DD_MM_YY = 4,
-            /// <summary>
-            /// мм/дд/гг
-            /// </summary>
-            MM_DD_YY = 5
-        }
+                      $"dtf={(int) dtf}&" + // Номер формата дат
+                      $"tmf={(int) tmf}&" + // Номер формата времени
+                      $"MSOR={(int) ct}&" + // Время свечи (0 - open; 1 - close)
 
-        /// <summary>
-        /// Формат времени
-        /// </summary>
-        enum TimeFormat
-        {
-            /// <summary>
-            /// ччммсс
-            /// </summary>
-            HHMMSS = 1,
-            /// <summary>
-            /// ччмм
-            /// </summary>
-            HHMM = 2,
-            /// <summary>
-            /// чч:мм:сс
-            /// </summary>
-            HH_MM_SS = 3,
-            /// <summary>
-            /// чч:мм
-            /// </summary>
-            HH_MM = 4
+                      $"mstime=on&" + // Московское время	( "on", "off")
+                      $"mstimever=1&" + // Коррекция часового пояса
+                      $"sep={(int) fs}&" + // Разделитель полей
+                      $"sep2={(int) bs}&" + // Разделитель разрядов
+                      $"datf={(int) datf}&" + // Формат записи в файл
+                      $"at={(int) at}"; // Нужны ли заголовки столбцов (0 - нет, 1 - да)
+
+            return url;
         }
     }
 }
-
-
-/*
- * Имя параметра	Назначение	Пример
-market	Номер рынка	5
-em	Номер инструмента	86
-code	Тикер инструмента	GBPUSD
-df	Начальная дата, номер дня (1-31)	1
-mf	Начальная дата, номер месяца (0-11)	11
-yf	Начальная дата, год	2014
-from	Начальная дата	01.12.2014
-dt	Конечная дата, номер дня	6
-mt	Конечная дата, номер месяца	11
-yt	Конечная дата, год	2014
-to	Конечная дата	06.12.2014
- */
-
- /*
-  * Месяцы нумеруются, начиная с 0; дни – с 1.
-  * Если в форме поставить галочку Московское время, то в запросе появится параметр mstime=on,
-  * если не поставить – данный параметр будет отсутствовать.
-  * Аналогично для параметра at – он появится в строке запроса, только если поставить галочку Добавить заголовок файла.
-  * Параметр p для тиковых данных должен быть равен 1; для минуток – 2; для 5-минуток – 3; 10-минуток – 4; ... ;
-  * для часового таймфрейма – 7; дневного – 8; недельного – 9; месячного – 10.
-  * Для тиковых данных параметр datf лучше всего задавать равным 11, для всех остальных таймфреймов – 5.
-  * Параметр market (рынок) для мировых индексов равен 6, для мировых валют – 5, для фьючерсов США – 7,
-  * для фьючерсов ФОРТС – 14 (но эксперименты показали, что данный параметр может принимать любое значение, полученный результат от этого не изменяется).
-  */

@@ -43,7 +43,7 @@ namespace FinamDownloader
             public string GetDescription(bool fullDescr = false)
             {
                 return !fullDescr
-                    ? $"{Id}\t{Name}\t{Code}"
+                    ? $"{Id}\t{Name}\t{Code}\t{Market}\t{Decp}"
                     : $"{Id}\t{Name}\t{Code}\t{Market}\t{Decp}\t{Child}\t{Url}";
             }
         }
@@ -168,6 +168,75 @@ namespace FinamDownloader
                     var url = buf2[1];
 
                     Issuers.Add(new FinamIssuer(aEmitentIds[i], aEmitentNames[i], aEmitentCodes[i], aEmitentMarkets[i], decp, child, url));
+                }
+
+                // tests
+                //GetDublicateIds();
+                //GetMarketsList();
+                //GetUrlsList();
+            }
+
+            private void GetDublicateIds()
+            {
+                var idsList = new List<string>();
+                var dublicateIdsList = new List<string>();
+
+                foreach (var issuer in Issuers)
+                {
+                    if (idsList.Contains(issuer.Id))
+                    {
+                        dublicateIdsList.Add(issuer.Id);
+                    }
+
+                    idsList.Add(issuer.Id);
+                }
+
+                Console.WriteLine($"dublicateIdsList.Count = {dublicateIdsList.Count}");
+                foreach (var id2 in dublicateIdsList)
+                {
+                    var issuers = Issuers.FindAll(iss => iss.Id == id2);
+                    foreach (var issuer in issuers)
+                    {
+                        // Console.WriteLine(issuer.GetDescription());
+                    }
+                }
+            }
+
+            private void GetMarketsList()
+            {
+                var marketsList = new List<string>();
+
+                foreach (var issuer in Issuers)
+                {
+                    if (!marketsList.Contains(issuer.Market))
+                    {
+                        marketsList.Add(issuer.Market);
+                    }
+                }
+
+                Console.WriteLine($"marketsList.Count = {marketsList.Count}");
+                foreach (var market in marketsList)
+                {
+                    //Console.WriteLine(market);
+                }
+            }
+
+            private void GetUrlsList()
+            {
+                var urlsList = new List<string>();
+
+                foreach (var issuer in Issuers)
+                {
+                    if (!urlsList.Contains(issuer.Url))
+                    {
+                        urlsList.Add(issuer.Url);
+                    }
+                }
+
+                Console.WriteLine($"urlsList.Count = {urlsList.Count}");
+                foreach (var url in urlsList)
+                {
+                    //Console.WriteLine(url);
                 }
             }
         }

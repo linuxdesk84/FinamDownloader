@@ -25,10 +25,12 @@ namespace FinamDownloader
             {
                 Console.WriteLine(@"1 - поиск инструмента (содержит подстроку)");
                 Console.WriteLine(@"2 - поиск инструмента (равно строке)");
-                Console.WriteLine(@"3 - загрузка фьючерса");
+                Console.WriteLine(@"3 - загрузка / обновление фьючерса без перезаписи (базовое имя)");
+                Console.WriteLine(@"4 - загрузка фьючерса за период с перезаписью (базовое имя)");
+                Console.WriteLine(@"0 - выход");
 
                 ch = Console.ReadLine();
-            } while (ch != "1" && ch != "2" && ch != "3");
+            } while (ch != "1" && ch != "2" && ch != "3" && ch != "4" && ch != "0");
 
             switch (Convert.ToInt32(ch))
             {
@@ -41,7 +43,14 @@ namespace FinamDownloader
                     break;
 
                 case 3:
-                    DownloadFuture(issuers, true);
+                    DownloadFutures(issuers, false);
+                    break;
+
+                case 4:
+                    DownloadFutures(issuers, true, true);
+                    break;
+
+                case 0:
                     break;
 
                 default:
@@ -49,6 +58,7 @@ namespace FinamDownloader
             }
 
 
+            Console.WriteLine("Complete");
             Console.ReadKey();
         }
 
@@ -81,14 +91,39 @@ namespace FinamDownloader
             }
         }
 
+
         /// <summary>
         /// Загрузка тиков по фьючам
         /// </summary>
         /// <param name="issuers"></param>
+        /// <param name="fNeedPeriod">запрашиваем период</param>
+        /// <param name="fOverwrite">перезапись</param>
         /// <param name="fSkipUnfinished">skip loading unfinished futures</param>
-        private static void DownloadFuture(List<FinamIssuer> issuers, bool fSkipUnfinished)
+        private static void DownloadFutures(List<FinamIssuer> issuers, bool fNeedPeriod = false, bool fOverwrite = false, bool fSkipUnfinished = true)
         {
+            var dtBeg = DateTime.MinValue;
+            var dtEnd = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1); // намеренно игнорируем номер дня
+
+            if (fNeedPeriod)
+            {
+                Console.Write("Enter dtBeg as 'year, month' (for example: '2017, 11'): ");
+                var bufDt1 = Console.ReadLine()?.Split(',');
+                Assert.IsTrue(bufDt1 != null && bufDt1.Length == 2);
+                var y1 = Convert.ToInt32(bufDt1[0]);
+                var m1 = Convert.ToInt32(bufDt1[1]);
+                dtBeg = new DateTime(y1, m1, 1);
+
+                Console.Write("Enter dtEnd as 'year, month' (for example: '2018, 12'): ");
+                var bufDt2 = Console.ReadLine()?.Split(',');
+                Assert.IsTrue(bufDt2 != null && bufDt2.Length == 2);
+                var y2 = Convert.ToInt32(bufDt2[0]);
+                var m2 = Convert.ToInt32(bufDt2[1]);
+                dtEnd = new DateTime(y2, m2, 1);
+            }
+
+
             const string historyDataDir = @"c:\Users\admin\Documents\HistoryData\";
+
 
             Console.Write(@"Enter future name (for example: BR, MX, MM, SR, etc.): ");
             var futNameBase = Console.ReadLine();
@@ -109,7 +144,7 @@ namespace FinamDownloader
             // в файл writer будут записываться сформированные urls
             var curDt = DateTime.Now;
             var fdUrlsLog = historyDataDir + $"FD_urls_{curDt:yyyyMMdd_HHmmss}.txt";
-            var writer = new StreamWriter(fdUrlsLog, false) {AutoFlush = true};
+            var writer = new StreamWriter(fdUrlsLog, false) { AutoFlush = true };
 
             foreach (var fut in futList)
             {
@@ -129,7 +164,7 @@ namespace FinamDownloader
 
 
                 // если фьючерс еще не завершен, то пропускаем загрузку
-                if (fSkipUnfinished && curDt < dtT)
+                if (fSkipUnfinished && curDt < dtT || dtT < dtBeg || dtEnd < dtT)
                 {
                     continue;
                 }
@@ -138,15 +173,20 @@ namespace FinamDownloader
                 // имя результирующего файла (д.б. без расширения) для дневных свечей по каждому фьючерсу
                 var rezultFnD1 = $"{code}_{dtF:yyMMdd}_{dtT:yyMMdd}";
 
-
-                var url = GetUrl(dtF, dtT, rezultFnD1, code, fut, TimeFrame.Day, DataFormat.CandleOptimal, at: ColumnHeaderNeed.No);
-                writer.WriteLine(url);
-
                 var ffn = saveDirBase + rezultFnD1 + ".txt";
-                while (!TryDownload(url, ffn))
+
+                if (fOverwrite || !File.Exists(ffn))
                 {
+                    Console.Write(code);
+
+                    var url = GetUrl(dtF, dtT, rezultFnD1, code, fut, TimeFrame.Day, DataFormat.CandleOptimal);
+                    writer.WriteLine(url);
+
+                    while (!TryDownload(url, ffn))
+                    {
+                    }
                 }
-                Console.Write(code);
+
 
 
                 // теперь надо прочитать скачанный файл, и скачать за каждую доступную дату тики
@@ -155,7 +195,8 @@ namespace FinamDownloader
                     var saveDir2 = saveDirBase + $@"{code}\";
                     Directory.CreateDirectory(saveDir2);
 
-                    //var writer2 = new StreamWriter(saveDir2 + "urls.txt", false) { AutoFlush = true };
+                    // игнорируем первую строку
+                    reader.ReadLine();
 
                     while (!reader.EndOfStream)
                     {
@@ -185,10 +226,14 @@ namespace FinamDownloader
                         writer.WriteLine(urlTick);
 
                         var ffn2 = saveDir2 + rezultFnTick + ".txt";
-                        while (!TryDownload(urlTick, ffn2))
+                        if (fOverwrite || !File.Exists(ffn2))
                         {
+                            while (!TryDownload(urlTick, ffn2))
+                            {
+                            }
+                            Console.Write(".");
                         }
-                        Console.Write(".");
+
                     }
                     Console.Write('\n');
                 }
@@ -202,8 +247,6 @@ namespace FinamDownloader
         /// </summary>
         public static bool TryDownload(string url, string fn)
         {
-            return true;
-
             // результат выполнения загрузки
             var res = true;
 

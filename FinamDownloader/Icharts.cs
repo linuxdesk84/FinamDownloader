@@ -43,7 +43,7 @@ namespace FinamDownloader
             public string GetDescription(bool fullDescr = false)
             {
                 return !fullDescr
-                    ? $"{Id}\t{Name}\t{Code}\t{Market}\t{Decp}"
+                    ? $"{Id}\t{Name}\t{Code}\t{Market}"
                     : $"{Id}\t{Name}\t{Code}\t{Market}\t{Decp}\t{Child}\t{Url}";
             }
         }

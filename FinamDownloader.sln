@@ -5,8 +5,6 @@ VisualStudioVersion = 15.0.27703.2047
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinamDownloader", "FinamDownloader\FinamDownloader.csproj", "{D4E85AFF-D848-4A01-AE41-419A74927F97}"
 EndProject
-Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Py_icharts_analyze", "icharts_analyze\Py_icharts_analyze.pyproj", "{08C6EF86-F09E-40D4-A19D-3F1883D23BF8}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -17,8 +15,6 @@ Global
 		{D4E85AFF-D848-4A01-AE41-419A74927F97}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D4E85AFF-D848-4A01-AE41-419A74927F97}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D4E85AFF-D848-4A01-AE41-419A74927F97}.Release|Any CPU.Build.0 = Release|Any CPU
-		{08C6EF86-F09E-40D4-A19D-3F1883D23BF8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{08C6EF86-F09E-40D4-A19D-3F1883D23BF8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

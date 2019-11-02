@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Threading;
 using Engine;
 using NUnit.Framework;
@@ -18,6 +19,13 @@ namespace FinamDownloader
 
         private static void Main()
         {
+            // The request was aborted: Could not create SSL/TLS secure channel.
+            // Запрос был прерван: Не удалось создать защищенный канал SSL/TLS.
+            // http://qaru.site/questions/45913/the-request-was-aborted-could-not-create-ssltls-secure-channel
+
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+            //ServicePointManager.SecurityProtocol = (SecurityProtocolType)3072;
+
             const string ffnIcharts = @"d:\SyncDirs\main\pdata\visualstudio\FinamDownloader\icharts\icharts.js";
 
 
@@ -40,19 +48,8 @@ namespace FinamDownloader
 
                 if (ch == "9")
                 {
-                    if (File.Exists(ffnIcharts))
-                    {
-                        // backup icharts.js
-                        var backupName = Path.GetDirectoryName(ffnIcharts) + "\\" +
-                                         Path.GetFileNameWithoutExtension(ffnIcharts) +
-                                         $"_{DateTime.Now:yyyy.MM.dd_HH;mm;ss}" + Path.GetExtension(ffnIcharts);
-                        File.Move(ffnIcharts, backupName);
-                    }
-
-                    while (!TryDownload(@"https://www.finam.ru/cache/icharts/icharts.js", ffnIcharts))
-                    { }
-
-                    Console.WriteLine(@"Файл icharts.js загружен");
+                    DownloadIcharts(ffnIcharts);
+                    
                 }
 
             } while (ch != "1" && ch != "2" &&
@@ -103,6 +100,94 @@ namespace FinamDownloader
 
             Console.WriteLine(@"Complete");
             Console.ReadKey();
+        }
+
+
+        private static string MyGetResponse(string uri)
+        {
+            var request = (HttpWebRequest)WebRequest.Create(uri);
+            using (var response = (HttpWebResponse)request.GetResponse())
+            using (var reader = new StreamReader(response.GetResponseStream(), Encoding.Default, true, 8192))
+            {
+                return reader.ReadToEnd();
+            }
+        }
+
+        private static bool GetIchartsUrl(out string ichartsUrl)
+        {
+            ichartsUrl = "";
+
+            const string finamUrl = @"https://www.finam.ru/";
+            const string sberPage = finamUrl + @"profile/moex-akcii/sberbank/export/";
+
+            var sberPageResponse = MyGetResponse(sberPage);
+
+            var strings = sberPageResponse.Split('\n');
+
+            foreach (var str in strings)
+            {
+                if (!str.Contains("icharts.js"))
+                    continue;
+
+                var buf = str.Split('"');
+                foreach (var subStr in buf)
+                {
+                    if (subStr.Contains("icharts.js"))
+                    {
+                        ichartsUrl = finamUrl + subStr;
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        private static void DownloadIcharts(string ffnIcharts)
+        {
+            var resGet = GetIchartsUrl(out var ichartsUrl);
+            if (!resGet)
+            {
+                Console.WriteLine("error getting ichartsUrl");
+                return;
+            }
+
+            var ichartsDir = Path.GetDirectoryName(ffnIcharts) + "\\";
+            var ichartsTmpFile = ichartsDir + $"{DateTime.Now.Ticks}";
+
+            // количество попыток скачать
+            var numOfAttempts = 5;
+            resGet = false;
+
+            while (numOfAttempts > 0)
+            {
+                if (TryDownload(ichartsUrl, ichartsTmpFile))
+                {
+                    resGet = true;
+                    break;
+                }
+
+                numOfAttempts--;
+            }
+
+            if (!resGet)
+            {
+                Console.WriteLine("error downloading icharts");
+                return;
+            }
+
+
+
+            if (File.Exists(ffnIcharts))
+            {
+                // backup existing icharts.js
+                var backupName = ichartsDir + Path.GetFileNameWithoutExtension(ffnIcharts) +
+                                 $"_{DateTime.Now:yyyy.MM.dd_HH;mm;ss}" + Path.GetExtension(ffnIcharts);
+                File.Move(ffnIcharts, backupName);
+            }
+
+
+            File.Move(ichartsTmpFile, ffnIcharts);
+            Console.WriteLine(@"icharts.js is downloading");
         }
 
 
@@ -159,12 +244,7 @@ namespace FinamDownloader
         /// <returns></returns>
         public static bool TryDownload(string url, string fn)
         {
-            // The request was aborted: Could not create SSL/TLS secure channel.
-            // Запрос был прерван: Не удалось создать защищенный канал SSL/TLS.
-            // http://qaru.site/questions/45913/the-request-was-aborted-could-not-create-ssltls-secure-channel
-
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-            //ServicePointManager.SecurityProtocol = (SecurityProtocolType)3072;
+            
 
             // результат выполнения загрузки
             var res = true;

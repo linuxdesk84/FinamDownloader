@@ -18,8 +18,7 @@ namespace FinamDownloader
 
         private static void Main()
         {
-            const string dir = @"d:\SyncDirs\main\pdata\visualstudio\FinamDownloader\icharts\";
-            const string fn = "icharts.js";
+            const string ffnIcharts = @"d:\SyncDirs\main\pdata\visualstudio\FinamDownloader\icharts\icharts.js";
 
 
             var ch = "";
@@ -41,12 +40,18 @@ namespace FinamDownloader
 
                 if (ch == "9")
                 {
-                    if (File.Exists(dir + fn))
+                    if (File.Exists(ffnIcharts))
                     {
-                        File.Move(dir + fn, dir + $"{DateTime.Now:yyyy.MM.dd_HH;mm;ss}_{fn}");
+                        // backup icharts.js
+                        var backupName = Path.GetDirectoryName(ffnIcharts) + "\\" +
+                                         Path.GetFileNameWithoutExtension(ffnIcharts) +
+                                         $"_{DateTime.Now:yyyy.MM.dd_HH;mm;ss}" + Path.GetExtension(ffnIcharts);
+                        File.Move(ffnIcharts, backupName);
                     }
-                    
-                    DownloadIcharts(dir + fn);
+
+                    while (!TryDownload(@"https://www.finam.ru/cache/icharts/icharts.js", ffnIcharts))
+                    { }
+
                     Console.WriteLine(@"Файл icharts.js загружен");
                 }
 
@@ -57,7 +62,7 @@ namespace FinamDownloader
 
 
 
-            var icharts = new Icharts(dir + fn);
+            var icharts = new Icharts(ffnIcharts);
             var issuers = icharts.Issuers;
 
             switch (Convert.ToInt32(ch))
@@ -67,7 +72,7 @@ namespace FinamDownloader
                     break;
 
                 case 2:
-                    FindIssuers(issuers, true, false);
+                    FindIssuers(issuers, true);
                     break;
 
                 case 3:
@@ -100,16 +105,13 @@ namespace FinamDownloader
             Console.ReadKey();
         }
 
-        private static void DownloadIcharts(string fn)
-        {
-            const string ichartsUrl = @"https://www.finam.ru/cache/icharts/icharts.js";
-            while (!TryDownload(ichartsUrl, fn))
-            {
-            }
-        }
 
-        // требуем равенство
-        private static void FindIssuers(List<FinamIssuer> issuers, bool equalityRequired = false, bool fullDescr = true)
+        /// <summary>
+        /// поиск эмитента
+        /// </summary>
+        /// <param name="issuers">имя эмитента</param>
+        /// <param name="equalityRequired">требование полного совпадения строки поиска и имени эмитента</param>
+        private static void FindIssuers(List<FinamIssuer> issuers, bool equalityRequired = false)
         {
             Console.Write(@"enter name of issuer: ");
             var name = Console.ReadLine();
@@ -119,21 +121,32 @@ namespace FinamDownloader
                 equalityRequired ? name == issuer.Name : issuer.Name.Contains(name));
             Console.WriteLine($@"issuersList.Count  = {issuersList.Count}");
 
-            var bCh = "";
-            const int max = 50;
+            // если найдено не более 5 эмитентов, то молча печатаем с полным описанием
+            const int max = 5;
+            var fullDescr = true;
 
+            // если найдено более 5 эмитентов, то спрашиваем надо ли печатать
             if (issuersList.Count > max)
             {
-                Console.WriteLine(@"do you want to print all of issuersList names? (Y = yes, anyKey = no)");
-                bCh = Console.ReadLine()?.ToUpper();
+                var bCh = "";
+                do
+                {
+                    Console.WriteLine(@"do you want to print all of issuersList names?");
+                    Console.WriteLine(@"1 - OK (min description), 2 - OK (full description), 0 - No");
+                    bCh = Console.ReadLine();
+                } while (bCh != "1" && bCh != "2" && bCh != "0");
+
+                if (bCh == "0")
+                    return;
+
+                // нужно ли полное описание?
+                fullDescr = bCh == "2";
             }
 
-            if (issuersList.Count <= max || bCh == "Y")
+            
+            foreach (var issuer in issuersList)
             {
-                foreach (var issuer in issuersList)
-                {
-                    Console.WriteLine(issuer.GetDescription(fullDescr));
-                }
+                Console.WriteLine(issuer.GetDescription(fullDescr));
             }
         }
 
@@ -146,6 +159,13 @@ namespace FinamDownloader
         /// <returns></returns>
         public static bool TryDownload(string url, string fn)
         {
+            // The request was aborted: Could not create SSL/TLS secure channel.
+            // Запрос был прерван: Не удалось создать защищенный канал SSL/TLS.
+            // http://qaru.site/questions/45913/the-request-was-aborted-could-not-create-ssltls-secure-channel
+
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+            //ServicePointManager.SecurityProtocol = (SecurityProtocolType)3072;
+
             // результат выполнения загрузки
             var res = true;
 
@@ -153,16 +173,17 @@ namespace FinamDownloader
             try
             {
                 wc.DownloadFile(url, fn);
-                Thread.Sleep(2000);
             }
             catch (WebException webException)
             {
                 Console.WriteLine(webException.Message);
                 res = false;
             }
+            Thread.Sleep(1000);
 
             return res;
         }
+
 
         //issuer.Market, issuer.Id
         private static string GetUrl(DateTime dtF, DateTime dtT, string rezultFn, string code, string market, string id, ETimeFrame tf,

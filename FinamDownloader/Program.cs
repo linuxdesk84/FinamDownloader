@@ -15,7 +15,7 @@ namespace FinamDownloader
 {
     internal partial class Program
     {
-        const string HistoryDataDir = @"c:\Users\admin\Documents\SyncDocs\HistoryData\";
+        private const string HistoryDataDir = @"c:\Users\admin\Documents\SyncDocs\HistoryData\";
 
         private static void Main()
         {
@@ -29,78 +29,80 @@ namespace FinamDownloader
             const string ffnIcharts = @"d:\SyncDirs\main\pdata\visualstudio\FinamDownloader\icharts\icharts.js";
 
 
-            var ch = "";
-            do
+
+            while (true)
             {
-                Console.WriteLine(@"1 - поиск инструмента (содержит подстроку)");
-                Console.WriteLine(@"2 - поиск инструмента (равно строке)");
+                PrintMenu();
+                var sel = Console.ReadLine();
 
-                Console.WriteLine(@"3 - загрузка / обновление фьючерса без перезаписи (базовое имя)");
-                Console.WriteLine(@"4 - загрузка фьючерса за период с перезаписью (базовое имя)");
-
-                Console.WriteLine(@"5 - загрузка / обновление акций без перезаписи");
-                Console.WriteLine(@"6 - загрузка акций за период с перезаписью");
-
-                Console.WriteLine(@"9 - загрузка icharts.js");
-                Console.WriteLine(@"0 - выход");
-
-                ch = Console.ReadLine();
-
-                if (ch == "9")
+                if (sel == "0")
                 {
-                    DownloadIcharts(ffnIcharts);
+                    return;
                 }
 
-            } while (ch != "1" && ch != "2" &&
-                     ch != "3" && ch != "4" &&
-                     ch != "5" && ch != "6" && 
-                     ch != "0");
+                if (sel == "9")
+                {
+                    DownloadIcharts(ffnIcharts);
+                    continue;
+                }
+
+                if (sel != "1" && sel != "2" && sel != "3" && sel != "4" && sel != "5" && sel != "6")
+                {
+                    Console.WriteLine(@"Not correct select");
+                    continue;
+                }
+
+                var icharts = new Icharts(ffnIcharts);
+                var issuers = icharts.Issuers;
+
+                switch (sel)
+                {
+                    case "1":
+                        FindIssuers(issuers);
+                        break;
+
+                    case "2":
+                        FindIssuers(issuers, true);
+                        break;
+
+                    case "3":
+                        DownloadFutures(issuers, false);
+                        break;
+
+                    case "4":
+                        DownloadFutures(issuers, true, true);
+                        break;
+
+                    case "5":
+                        DownloadShares(issuers);
+                        break;
+
+                    case "6":
+                        DownloadShares(issuers, true, true);
+                        break;
 
 
-
-            var icharts = new Icharts(ffnIcharts);
-            var issuers = icharts.Issuers;
-
-            switch (Convert.ToInt32(ch))
-            {
-                case 1:
-                    FindIssuers(issuers);
-                    break;
-
-                case 2:
-                    FindIssuers(issuers, true);
-                    break;
-
-                case 3:
-                    DownloadFutures(issuers, false);
-                    break;
-
-                case 4:
-                    DownloadFutures(issuers, true, true);
-                    break;
-
-                case 5:
-                    DownloadShares(issuers);
-                    break;
-
-                case 6:
-                    DownloadShares(issuers, true, true);
-                    break;
-
-                case 0:
-                    break;
-
-                default:
-                    break;
+                    default:
+                        break;
+                }
             }
-
-            if (ch == "0")
-               return;
-
-            Console.WriteLine(@"Complete");
-            Console.ReadKey();
         }
 
+        private static void PrintMenu()
+        {
+            Console.WriteLine("");
+            Console.WriteLine("1 - поиск инструмента (содержит подстроку)");
+            Console.WriteLine("2 - поиск инструмента (равно строке)");
+
+            Console.WriteLine("3 - загрузка / обновление фьючерса без перезаписи (базовое имя)");
+            Console.WriteLine("4 - загрузка фьючерса за период с перезаписью (базовое имя)");
+
+            Console.WriteLine("5 - загрузка / обновление акций без перезаписи");
+            Console.WriteLine("6 - загрузка акций за период с перезаписью");
+
+            Console.WriteLine("9 - загрузка icharts.js");
+            Console.WriteLine("0 - выход");
+        }
 
         private static string MyGetResponse(string uri)
         {

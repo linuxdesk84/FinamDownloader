@@ -49,7 +49,6 @@ namespace FinamDownloader
                 if (ch == "9")
                 {
                     DownloadIcharts(ffnIcharts);
-                    
                 }
 
             } while (ch != "1" && ch != "2" &&
@@ -142,6 +141,7 @@ namespace FinamDownloader
             return false;
         }
 
+
         private static void DownloadIcharts(string ffnIcharts)
         {
             var resGet = GetIchartsUrl(out var ichartsUrl);
@@ -152,7 +152,9 @@ namespace FinamDownloader
             }
 
             var ichartsDir = Path.GetDirectoryName(ffnIcharts) + "\\";
-            var ichartsTmpFile = ichartsDir + $"{DateTime.Now.Ticks}";
+            var fn = Path.GetFileNameWithoutExtension(ffnIcharts);
+
+            var ichartsTmpFile = $@"a:\{fn}_{DateTime.Now.Ticks}"; // ichartsDir + $"{DateTime.Now.Ticks}";
 
             // количество попыток скачать
             var numOfAttempts = 5;
@@ -176,12 +178,20 @@ namespace FinamDownloader
             }
 
 
-
             if (File.Exists(ffnIcharts))
             {
+                // если файлы одинаковые, то перезаписывать не надо
+                if (new FileInfo(ffnIcharts).Length == new FileInfo(ichartsTmpFile).Length &&
+                    File.ReadAllBytes(ffnIcharts).SequenceEqual(File.ReadAllBytes(ichartsTmpFile)))
+                {
+                    Console.WriteLine("downloading and existing files are equals");
+                    File.Delete(ichartsTmpFile);
+                    return;
+                }
+
                 // backup existing icharts.js
-                var backupName = ichartsDir + Path.GetFileNameWithoutExtension(ffnIcharts) +
-                                 $"_{DateTime.Now:yyyy.MM.dd_HH;mm;ss}" + Path.GetExtension(ffnIcharts);
+                var backupName = ichartsDir + $"{fn}_{DateTime.Now:yyyy.MM.dd_HH;mm;ss}" +
+                                 Path.GetExtension(ffnIcharts);
                 File.Move(ffnIcharts, backupName);
             }
 

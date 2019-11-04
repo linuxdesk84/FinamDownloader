@@ -163,7 +163,7 @@ namespace FinamDownloader
                     var issuer = shares[i];
 
                     // имя результирующего файла для дневных свечей. имя передается без расширения.
-                    var fnD1 = $"{shareName}({issuer.Id},{issuer.Market})_{dtBeg:yyMMdd}_{dtEnd:yyMMdd}";
+                    var fnD1 = $"{shareName}_{dtBeg:yyMMdd}_{dtEnd:yyMMdd}";
                     var fnD1Txt = fnD1 + ".txt";
 
                     var ffnD1 = shareDirD1 + fnD1Txt;
@@ -217,7 +217,7 @@ namespace FinamDownloader
             else
             {
                 // имя результирующего файла для дневных свечей. имя передается без расширения.
-                var fnD1 = $"{shareName}({id},{marketNum})_{dtBeg:yyMMdd}_{dtEnd:yyMMdd}";
+                var fnD1 = $"{shareName}_{dtBeg:yyMMdd}_{dtEnd:yyMMdd}";
                 var fnD1Txt = fnD1 + ".txt";
 
                 var ffnD1 = shareDirD1 + fnD1Txt;

@@ -22,7 +22,7 @@ namespace FinamDownloader
         private static void DownloadFutures(List<FinamIssuer> issuers, bool fNeedPeriod = false,
             bool fOverwrite = false, bool fSkipUnfinished = true)
         {
-            var dtBeg = DateTime.MinValue;
+            var dtBeg = new DateTime(1979, 1, 1);
             var dtEnd = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1); // намеренно игнорируем номер дня
 
             if (fNeedPeriod)
@@ -46,26 +46,25 @@ namespace FinamDownloader
             const string historyDataDir = @"c:\Users\admin\Documents\SyncDocs\HistoryData\";
 
 
-            Console.Write(@"Enter future name (for example: BR, MX, MM, SR, etc.): ");
-            var futNameBase = Console.ReadLine();
-            Assert.IsTrue(futNameBase != null && futNameBase.Length == 2);
+            Console.Write(@"Enter future Base name (for example: BR, MX, MM, SR, etc.): ");
+
+            var futBaseName = Console.ReadLine();
+            Assert.IsTrue(futBaseName != null && futBaseName.Length == 2);
 
             const int futCodeLen = 4; // for example: BRU9, MXZ7, etc.
 
-            futNameBase += '-'; // "BR" -> "BR-"
+            futBaseName += '-'; // "BR" -> "BR-"
             var futList = issuers.FindAll(issuer =>
-                issuer.Name.Length >= futNameBase.Length &&
-                issuer.Name.Substring(0, futNameBase.Length) == futNameBase &&
+                issuer.Name.Length >= futBaseName.Length &&
+                issuer.Name.Substring(0, futBaseName.Length) == futBaseName &&
                 futCodeLen == issuer.Code.Length);
 
 
-            var saveDirBase = historyDataDir + futNameBase + "\\";
-            Directory.CreateDirectory(saveDirBase);
+            var futBaseDir = historyDataDir + futBaseName + "\\";
+            Directory.CreateDirectory(futBaseDir);
+            
 
-            // в файл writer будут записываться сформированные urls
-            var curDt = DateTime.Now;
-            var fdUrlsLog = historyDataDir + $"FD_urls_{curDt:yyyyMMdd_HHmmss}.txt";
-            var writer = new StreamWriter(fdUrlsLog, false) { AutoFlush = true };
+            var curDt = DateTime.Now.AddHours(-2);
 
             foreach (var fut in futList)
             {
@@ -74,9 +73,11 @@ namespace FinamDownloader
                 var code = fut.Name.Split('(')[0]; // "BR-1.09(BRF9)" -> "BR-1.09"
 
                 // дата экспирации
-                var expDateStr = code.Substring(futNameBase.Length).Split('.'); // "BR-1.09" -> "1.09" -> { "1", "09" }
+                var expDateStr = code.Substring(futBaseName.Length).Split('.'); // "BR-1.09" -> "1.09" -> { "1", "09" }
                 var expDateM = Convert.ToInt32(expDateStr[0]);
                 var expDateY = 2000 + Convert.ToInt32(expDateStr[1]);
+
+                var futName = futBaseName + $"{expDateY}.{expDateM:D2}"; // BR-2009.01
 
                 // для каждого фьюча запросим его дневные свечи за период [3 года до экспирации; 1 мес после экспирации]
                 var expDt = new DateTime(expDateY, expDateM, 1);
@@ -85,85 +86,53 @@ namespace FinamDownloader
 
 
                 // если фьючерс еще не завершен, то пропускаем загрузку
+                // До тех пор пока мы не скачиваем не завершенные фьючерсы - их не надо докачивать
                 if (fSkipUnfinished && curDt < dtT || dtT < dtBeg || dtEnd < dtT)
                 {
                     continue;
                 }
 
 
-                // имя результирующего файла (д.б. без расширения) для дневных свечей по каждому фьючерсу
-                var rezultFnD1 = $"{code}_{dtF:yyMMdd}_{dtT:yyMMdd}";
 
-                var ffn = saveDirBase + rezultFnD1 + ".txt";
+                // create dir futDir
+                var futDir = futBaseDir + $"{futName}\\";
+                Directory.CreateDirectory(futDir);
 
-                if (fOverwrite || !File.Exists(ffn))
+
+                var futDirLog = futDir + "logs\\";
+                Directory.CreateDirectory(futDirLog);
+                var futUrlsLog = futDirLog + $"urls_{curDt:yyyy.MM.dd_HH;mm;ss}.txt";
+
+                using (var futLog = new StreamWriter(futUrlsLog))
                 {
-                    Console.Write(code);
+                    // create dir futDirD1
+                    var futDirD1 = futDir + "D1\\";
+                    Directory.CreateDirectory(futDirD1);
 
-                    var url = GetUrl(dtF, dtT, rezultFnD1, code, fut.Market, fut.Id, ETimeFrame.Day,
-                        DataFormat.CandleOptimal);
-                    writer.WriteLine(url);
-
-                    while (!TryDownload(url, ffn))
-                    { }
-                }
+                    // имя результирующего файла для дневных свечей (д.б. без расширения)
+                    var futD1Name = $"{futName}_{dtF:yyMMdd}_{dtT:yyMMdd}";
 
 
-                // теперь надо прочитать скачанный файл, и скачать за каждую доступную дату тики
-                using (var reader = new StreamReader(ffn))
-                {
-                    var saveDir2 = saveDirBase + $@"{code}\";
-                    Directory.CreateDirectory(saveDir2);
+                    var futD1Path = futDirD1 + futD1Name + ".txt";
 
-                    // игнорируем первую строку
-                    reader.ReadLine();
-
-                    while (!reader.EndOfStream)
+                    if (!File.Exists(futD1Path) || fOverwrite)
                     {
-                        var str = reader.ReadLine();
+                        Console.WriteLine(futName);
 
-                        // пустая строка не предусмотрена
-                        Assert.IsNotNull(str);
+                        var url = GetUrl(dtF, dtT, futD1Name, futName, fut.Market, fut.Id, ETimeFrame.Day,
+                            DataFormat.CandleOptimal);
+                        futLog.WriteLine(url);
 
-                        var strDate = str.Split('\t')[0];
-
-                        var dtTick = strDate.Contains('.')
-                            ? DateTime.Parse(strDate, CultureInfo.CurrentCulture)
-                            : new DateTime(
-                                Convert.ToInt32(strDate.Substring(0, 4)),
-                                Convert.ToInt32(strDate.Substring(4, 2)),
-                                Convert.ToInt32(strDate.Substring(6, 2)));
+                        while (!TryDownload(url, futD1Path))
+                        { }
 
 
-                        // скачиваем тиковые данные за только за завершенные периоды
-                        if (dtTick >= curDt)
-                        {
-                            continue;
-                        }
-
-                        // имя результирующего файла для тиковых данных за конкретную дату
-                        var rezultFnTick = $"{code}_{dtTick:yyMMdd}_{dtTick:yyMMdd}";
-
-                        var urlTick = GetUrl(dtTick, dtTick, rezultFnTick, code, fut.Market, fut.Id, ETimeFrame.Tick,
-                            DataFormat.TickOptimal);
-                        writer.WriteLine(urlTick);
-
-                        var ffnTick = saveDir2 + rezultFnTick + ".txt";
-                        var ffnTick7Z = saveDir2 + rezultFnTick + ".7z";
-                        if (fOverwrite || (!File.Exists(ffnTick) && !File.Exists(ffnTick7Z)))
-                        {
-                            while (!TryDownload(urlTick, ffnTick))
-                            { }
-
-                            Console.Write(".");
-                        }
+                        // читаем futD1Path, и скачиваем тики за каждую доступную дату
+                        DownloadTicksFromD1File(false, futLog, futDir, futD1Path, futName, fut.Market, fut.Id,
+                            fOverwrite);
                     }
-
-                    Console.Write('\n');
                 }
             }
-
-            writer.Close();
         }
     }
 }

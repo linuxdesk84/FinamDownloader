@@ -13,52 +13,50 @@ namespace FinamDownloader
 
     internal partial class Program
     {
+        private static void GetPeriod(bool fNeedPeriod, out DateTime dtFrom, out DateTime dtTo)
+        {
+            dtFrom = new DateTime(1979, 1, 1);
+            dtTo = DateTime.Now.AddHours(-2);
+
+            if (!fNeedPeriod)
+                return;
+
+            Console.Write("Enter dtFrom as 'dd/MM/yyyy': ");
+            var bufDt1 = Console.ReadLine();
+            if (bufDt1 != "")
+            {
+                Assert.IsFalse(string.IsNullOrWhiteSpace(bufDt1));
+                var dt1 = DateTime.Parse(bufDt1, CultureInfo.CurrentCulture);
+                if (dtFrom < dt1)
+                {
+                    dtFrom = dt1;
+                }
+            }
+
+
+            Console.Write("Enter dtTo as 'dd/MM/yyyy': ");
+            var bufDt2 = Console.ReadLine();
+            if (bufDt2 != "")
+            {
+                Assert.IsFalse(string.IsNullOrWhiteSpace(bufDt2));
+                var dt2 = DateTime.Parse(bufDt2, CultureInfo.CurrentCulture);
+                if (dt2 < dtTo)
+                {
+                    dtTo = dt2;
+                }
+            }
+        }
+
         /// <summary>
         /// Загрузка тиков по акциям
         /// </summary>
         /// <param name="issuers"></param>
         /// <param name="fNeedPeriod">запрашиваем период</param>
         /// <param name="fOverwrite">перезапись</param>
-        private static void DownloadShares(List<FinamIssuer> issuers, bool fNeedPeriod = false, bool fOverwrite = false)
+        private static void DownloadShares(List<FinamIssuer> issuers, bool fNeedPeriod = false,
+            bool fOverwrite = false)
         {
-            void GetPeriod(bool fNeedPeriod2, out DateTime dtFrom, out DateTime dtTo)
-            {
-                dtFrom = new DateTime(1979, 1, 1);
-                dtTo = DateTime.Now.AddHours(-2);
-
-                if (!fNeedPeriod2)
-                    return;
-
-
-                Console.Write("Enter dtBeg as 'ДД/ММ/ГГГГ': ");
-                var bufDt1 = Console.ReadLine();
-                if (bufDt1 != "")
-                {
-                    Assert.IsFalse(string.IsNullOrWhiteSpace(bufDt1));
-                    var dt1 = DateTime.Parse(bufDt1, CultureInfo.CurrentCulture);
-                    if (dtFrom < dt1)
-                    {
-                        dtFrom = dt1;
-                    }
-                }
-
-
-                Console.Write("Enter dtEnd as 'ДД/ММ/ГГГГ': ");
-                var bufDt2 = Console.ReadLine();
-                if (bufDt2 != "")
-                {
-                    Assert.IsFalse(string.IsNullOrWhiteSpace(bufDt2));
-                    var dt2 = DateTime.Parse(bufDt2, CultureInfo.CurrentCulture);
-                    if (dt2 < dtTo)
-                    {
-                        dtTo = dt2;
-                    }
-                }
-            }
-
-
             GetPeriod(fNeedPeriod, out var dtBeg, out var dtEnd);
-
 
 
             Console.Write(@"Enter 'Name,Id,MarketNum': ");
@@ -187,7 +185,7 @@ namespace FinamDownloader
                         fn = fnNew;
                     }
 
-                    DownloadShareFromFile(urlsWriter, shareDir, fn,
+                    DownloadTicksFromD1File(true, urlsWriter, shareDir, fn,
                         shareName, issuer.Market, issuer.Id, fOverwrite);
                 }
 
@@ -218,7 +216,7 @@ namespace FinamDownloader
                 }
 
 
-                DownloadShareFromFile(urlsWriter, shareDir, ffnD1,
+                DownloadTicksFromD1File(true, urlsWriter, shareDir, ffnD1,
                     shareName, marketNum, id, fOverwrite);
             }
 
@@ -229,23 +227,20 @@ namespace FinamDownloader
         /// <summary>
         /// загрузка тиков по датам из файла
         /// </summary>
-        /// <param name="urlsWriter"></param>
-        /// <param name="shareDir">папка акции</param>
+        /// <param name="isShares">Это акция? для фьючей тики не раскладываются по годам</param>
+        /// <param name="urlsWriter">открытый поток куда сохраняем urls</param>
+        /// <param name="saveDir">каталог, куда сохраняем тики</param>
         /// <param name="ffnD1">полный путь до файла с дневными свечами</param>
-        /// <param name="shareName"></param>
-        /// <param name="shareMarket"></param>
-        /// <param name="shareId"></param>
+        /// <param name="issuerName">security</param>
+        /// <param name="issuerMarket"></param>
+        /// <param name="issuerId"></param>
         /// <param name="fOverwrite"></param>
-        private static void DownloadShareFromFile(TextWriter urlsWriter, string shareDir, string ffnD1,
-            string shareName, string shareMarket, string shareId, bool fOverwrite = false)
+        private static void DownloadTicksFromD1File(bool isShares, TextWriter urlsWriter, string saveDir,
+            string ffnD1, string issuerName, string issuerMarket, string issuerId, bool fOverwrite = false)
         {
-            var curDt = DateTime.Now.AddHours(-2); // корректировка на мск
-
             Assert.IsTrue(File.Exists(ffnD1));
-            var fn = Path.GetFileName(ffnD1);
-            Assert.IsTrue(fn != null && fn.Contains('_'));
 
-            var fnShareName = fn.Split('_')[0];
+            var curDt = DateTime.Now.AddHours(-2); // корректировка на мск
 
             // читаем файл со свечами D1, и скачиваем за каждую доступную дату тики
             using (var reader = new StreamReader(ffnD1))
@@ -258,7 +253,7 @@ namespace FinamDownloader
                     var str = reader.ReadLine();
 
                     // пустая строка не предусмотрена
-                    Assert.IsNotNull(str);
+                    Assert.IsFalse(string.IsNullOrWhiteSpace(str));
 
                     var strDate = str.Split('\t')[0];
 
@@ -278,24 +273,23 @@ namespace FinamDownloader
                     }
 
 
-                    // все тиковые данные будем хранить по годам
-                    var strYear = $"{dtTick:yyyy}";
-                    var yearDir = shareDir + strYear + "\\";
-                    if (!Directory.Exists(yearDir))
+                    // только для акций: все тиковые данные будем хранить по годам
+                    if (isShares)
                     {
-                        Directory.CreateDirectory(yearDir);
+                        saveDir += $"{dtTick:yyyy}\\";
+                        Directory.CreateDirectory(saveDir);
                     }
-
-
+                    
 
                     // имя результирующего файла для тиковых данных за конкретную дату
-                    var rezultFnTick = $"{fnShareName}_{dtTick:yyMMdd}_{dtTick:yyMMdd}";
+                    var rezultFnTick = $"{issuerName}_{dtTick:yyMMdd}_{dtTick:yyMMdd}";
 
-                    var urlTick = GetUrl(dtTick, dtTick, rezultFnTick, shareName, shareMarket, shareId, ETimeFrame.Tick, DataFormat.TickOptimal);
+                    var urlTick = GetUrl(dtTick, dtTick, rezultFnTick, issuerName, issuerMarket, issuerId,
+                        ETimeFrame.Tick, DataFormat.TickOptimal);
                     urlsWriter.WriteLine(urlTick);
 
-                    var ffnTick = yearDir + rezultFnTick + ".txt";
-                    var ffnTick7Z = yearDir + rezultFnTick + ".7z";
+                    var ffnTick = saveDir + rezultFnTick + ".txt";
+                    var ffnTick7Z = saveDir + rezultFnTick + ".7z";
 
                     var isExistsTick = File.Exists(ffnTick);
                     var isExistsTick7Z = File.Exists(ffnTick7Z);
@@ -323,10 +317,10 @@ namespace FinamDownloader
                         while (!TryDownload(urlTick, ffnTick))
                         { }
 
-                        Console.Write(rezultFnTick);
+                        Console.WriteLine(rezultFnTick);
                     }
                 }
-                Console.Write('\n');
+                Console.WriteLine(string.Empty);
             }
         }
     }

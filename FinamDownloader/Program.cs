@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using System.Threading;
 using Engine;
@@ -29,6 +30,16 @@ namespace FinamDownloader
             const string ffnIcharts = @"d:\SyncDirs\main\pdata\visualstudio\FinamDownloader\icharts\icharts.js";
 
 
+            // по времени модификации файла ffnCheckDate будем определять надо ли закачивать новый icharts.js
+            // если разница с текущим временем более 1 дня, то пытаемся обновить автоматически.
+            
+            var ffnCheck = Directory.GetParent(ffnIcharts) + "\\check.txt";
+            if (!File.Exists(ffnCheck) || DateTime.Now - File.GetLastWriteTime(ffnCheck) > new TimeSpan(1, 0, 0))
+            {
+                DownloadIchartsAndMark(ffnIcharts);
+            }
+
+
 
             while (true)
             {
@@ -42,7 +53,7 @@ namespace FinamDownloader
 
                 if (sel == "9")
                 {
-                    DownloadIcharts(ffnIcharts);
+                    DownloadIchartsAndMark(ffnIcharts, true);
                     continue;
                 }
 
@@ -93,12 +104,15 @@ namespace FinamDownloader
             Console.WriteLine("");
             Console.WriteLine("1 - поиск инструмента (содержит подстроку)");
             Console.WriteLine("2 - поиск инструмента (равно строке)");
+            Console.WriteLine(string.Empty);
 
             Console.WriteLine("3 - загрузка / обновление фьючерса без перезаписи (базовое имя)");
             Console.WriteLine("4 - загрузка фьючерса за период с перезаписью (базовое имя)");
+            Console.WriteLine(string.Empty);
 
             Console.WriteLine("5 - загрузка / обновление акций без перезаписи");
             Console.WriteLine("6 - загрузка акций за период с перезаписью");
+            Console.WriteLine(string.Empty);
 
             Console.WriteLine("9 - загрузка icharts.js");
             Console.WriteLine("0 - выход");
@@ -143,14 +157,29 @@ namespace FinamDownloader
             return false;
         }
 
+        private static void DownloadIchartsAndMark(string ffnIcharts, bool fMsg = false)
+        {
+            if (DownloadIcharts(ffnIcharts, fMsg))
+            {
+                // время модификации файла ffnIcharts будем менять только при успешной загрузке файла ffnIcharts
+                var ffnCheck = Directory.GetParent(ffnIcharts) + "\\check.txt";
+                using (var writer = new StreamWriter(ffnCheck, true))
+                {
+                    writer.WriteLine($"{DateTime.Now:G}");
+                }
+            }
+        }
 
-        private static void DownloadIcharts(string ffnIcharts)
+        private static bool DownloadIcharts(string ffnIcharts, bool fMsg)
         {
             var resGet = GetIchartsUrl(out var ichartsUrl);
             if (!resGet)
             {
-                Console.WriteLine("error getting ichartsUrl");
-                return;
+                if (fMsg)
+                {
+                    Console.WriteLine("error getting ichartsUrl");
+                }
+                return false;
             }
 
             var ichartsDir = Path.GetDirectoryName(ffnIcharts) + "\\";
@@ -175,8 +204,11 @@ namespace FinamDownloader
 
             if (!resGet)
             {
-                Console.WriteLine("error downloading icharts");
-                return;
+                if (fMsg)
+                {
+                    Console.WriteLine("error downloading icharts");
+                }
+                return false;
             }
 
 
@@ -186,9 +218,12 @@ namespace FinamDownloader
                 if (new FileInfo(ffnIcharts).Length == new FileInfo(ichartsTmpFile).Length &&
                     File.ReadAllBytes(ffnIcharts).SequenceEqual(File.ReadAllBytes(ichartsTmpFile)))
                 {
-                    Console.WriteLine("downloading and existing files are equals");
                     File.Delete(ichartsTmpFile);
-                    return;
+                    if (fMsg)
+                    {
+                        Console.WriteLine("downloading and existing files are equals");
+                    }
+                    return true;
                 }
 
                 // backup existing icharts.js
@@ -199,7 +234,11 @@ namespace FinamDownloader
 
 
             File.Move(ichartsTmpFile, ffnIcharts);
-            Console.WriteLine(@"icharts.js is downloading");
+            if (fMsg)
+            {
+                Console.WriteLine(@"icharts.js is downloading");
+            }
+            return true;
         }
 
 

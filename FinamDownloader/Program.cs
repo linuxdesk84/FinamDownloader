@@ -279,7 +279,7 @@ namespace FinamDownloader
                 fullDescr = bCh == "2";
             }
 
-            
+            Console.WriteLine(FinamIssuer.GetDescriptionHead(fullDescr));
             foreach (var issuer in issuersList)
             {
                 Console.WriteLine(issuer.GetDescription(fullDescr));

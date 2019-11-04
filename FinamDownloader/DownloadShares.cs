@@ -13,35 +13,59 @@ namespace FinamDownloader
 
     internal partial class Program
     {
-        private static void GetPeriod(bool fNeedPeriod, out DateTime dtFrom, out DateTime dtTo)
+        private static void GetPeriod(string shareDirD1, bool fNeedPeriod, out DateTime dtFrom, out DateTime dtTo)
         {
-            dtFrom = new DateTime(1979, 1, 1);
-            dtTo = DateTime.Now.AddHours(-2);
+            var dtFinamMin = new DateTime(1979, 1, 1);
+            var dtNow = DateTime.Now.AddHours(-2);
 
-            if (!fNeedPeriod)
-                return;
+            dtFrom = dtFinamMin;
+            dtTo = dtNow;
 
-            Console.Write("Enter dtFrom as 'dd/MM/yyyy': ");
-            var bufDt1 = Console.ReadLine();
-            if (bufDt1 != "")
+
+            var filesD1 = Directory.GetFiles(shareDirD1);
+            foreach (var fD1 in filesD1)
             {
-                Assert.IsFalse(string.IsNullOrWhiteSpace(bufDt1));
-                var dt1 = DateTime.Parse(bufDt1, CultureInfo.CurrentCulture);
-                if (dtFrom < dt1)
+                var fn = Path.GetFileNameWithoutExtension(fD1); // SBER_790101_191101
+                var strDtTo = fn.Split('_')[2];
+
+                var y = Convert.ToInt32(strDtTo.Substring(0, 2));
+                y += y > 70 ? 1900 : 2000;
+
+                var m = Convert.ToInt32(strDtTo.Substring(2, 2));
+                var d = Convert.ToInt32(strDtTo.Substring(4, 2));
+
+                var dt = new DateTime(y, m, d);
+                Assert.IsTrue(dtFinamMin < dt && dt <= dtNow);
+
+                if (dtFrom < dt)
                 {
-                    dtFrom = dt1;
+                    dtFrom = dt;
                 }
             }
 
 
-            Console.Write("Enter dtTo as 'dd/MM/yyyy': ");
-            var bufDt2 = Console.ReadLine();
-            if (bufDt2 != "")
+            if (fNeedPeriod)
             {
-                Assert.IsFalse(string.IsNullOrWhiteSpace(bufDt2));
-                var dt2 = DateTime.Parse(bufDt2, CultureInfo.CurrentCulture);
-                if (dt2 < dtTo)
+                Console.Write("Enter dtFrom as 'dd/MM/yyyy': ");
+                var bufDt1 = Console.ReadLine();
+                if (bufDt1 != "")
                 {
+                    Assert.IsFalse(string.IsNullOrWhiteSpace(bufDt1));
+                    var dt1 = DateTime.Parse(bufDt1, CultureInfo.CurrentCulture);
+
+                    Assert.IsTrue(dtFinamMin < dt1 && dt1 <= dtNow);
+                    dtFrom = dt1;
+                }
+
+
+                Console.Write("Enter dtTo as 'dd/MM/yyyy': ");
+                var bufDt2 = Console.ReadLine();
+                if (bufDt2 != "")
+                {
+                    Assert.IsFalse(string.IsNullOrWhiteSpace(bufDt2));
+                    var dt2 = DateTime.Parse(bufDt2, CultureInfo.CurrentCulture);
+
+                    Assert.IsTrue(dtFrom <= dt2 && dt2 <= dtNow);
                     dtTo = dt2;
                 }
             }
@@ -56,9 +80,6 @@ namespace FinamDownloader
         private static void DownloadShares(List<FinamIssuer> issuers, bool fNeedPeriod = false,
             bool fOverwrite = false)
         {
-            GetPeriod(fNeedPeriod, out var dtBeg, out var dtEnd);
-
-
             Console.Write(@"Enter 'Name,Id,MarketNum': ");
             var shareName = Console.ReadLine();
             Assert.IsFalse(string.IsNullOrWhiteSpace(shareName));
@@ -91,6 +112,9 @@ namespace FinamDownloader
                 Directory.CreateDirectory(shareDirD1);
             }
 
+
+
+            GetPeriod(shareDirD1, fNeedPeriod, out var dtBeg, out var dtEnd);
 
 
             // в файл urlsWriter будут записываться сформированные url

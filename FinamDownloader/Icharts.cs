@@ -46,6 +46,13 @@ namespace FinamDownloader
                     ? $"{Id}\t{Name}\t{Code}\t{Market}"
                     : $"{Id}\t{Name}\t{Code}\t{Market}\t{Decp}\t{Child}\t{Url}";
             }
+
+            public static string GetDescriptionHead(bool fullDescr = false)
+            {
+                return !fullDescr
+                    ? "Id\tName\tCode\tMarket"
+                    : "Id\tName\tCode\tMarket\tDecp\tChild\tUrl";
+            }
         }
 
         /// <summary>

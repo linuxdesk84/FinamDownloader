@@ -80,13 +80,13 @@ namespace FinamDownloader
         private static void DownloadShares(List<FinamIssuer> issuers, bool fNeedPeriod = false,
             bool fOverwrite = false)
         {
-            Console.Write(@"Enter 'Name,Id,MarketNum': ");
+            Console.Write(@"Enter 'Name,Market,Id': ");
             var shareName = Console.ReadLine();
             Assert.IsFalse(string.IsNullOrWhiteSpace(shareName));
 
 
+            var market = "-1";
             var id = "-1";
-            var marketNum = "-1";
 
             if (shareName.Contains(','))
             {
@@ -94,8 +94,13 @@ namespace FinamDownloader
                 Assert.IsTrue(buf.Length == 3);
 
                 shareName = buf[0];
-                id = buf[1];
-                marketNum = buf[2];
+                market = buf[1];
+                id = buf[2];
+
+                // Нельзя требовать, чтобы такой инструмент был в issuers в единственном экземпляре. это не работает!
+                // с сайта финам уже давно загружается SBER,market=1,id=3, но в обновляемых icharts.js такого SBER нет
+                // var tmpIssuers = issuers.FindAll(iss => iss.Name == shareName && iss.Id == id && iss.Market == market);
+                // Assert.IsTrue(tmpIssuers != null && tmpIssuers.Count == 1);
             }
 
 
@@ -121,10 +126,7 @@ namespace FinamDownloader
             var curDt = DateTime.Now.AddHours(-2);
 
             var logDir = shareDir + "logs\\";
-            if (!Directory.Exists(logDir))
-            {
-                Directory.CreateDirectory(logDir);
-            }
+            Directory.CreateDirectory(logDir);
 
 
             var fdUrlsLog = logDir + $"urls_{curDt:yyyy.MM.dd_HH;mm;ss}.txt";
@@ -132,9 +134,10 @@ namespace FinamDownloader
 
 
 
-            if (id == "-1" && marketNum == "-1")
+            if (market == "-1" && id == "-1")
             {
                 // акций с одним и тем же именем может быть несколько (например, SBER)
+                // в таком случае выбираем ту у которой url содержит @"moex-classica/"
                 var shares = issuers.FindAll(s => s.Name == shareName);
                 if (shares.Count == 0)
                 {
@@ -144,105 +147,68 @@ namespace FinamDownloader
 
                 if (shares.Count > 1)
                 {
-                    Console.WriteLine($"найдено акций с таким кодом: {shares.Count}");
-                    foreach (var issuer in shares)
+                    const string moexClassica = @"moex-classica/";
+                    var shares2 = shares.FindAll(s => s.Url.Contains(moexClassica));
+
+                    if (shares2.Count == 1)
                     {
-                        Console.WriteLine($"{issuer.GetDescription()}");
-                    }
-                }
-
-
-
-                // запросим дневные свечи за период [dtBeg; dtEnd] для каждого shares[i]
-                var nonEmptyShares = new List<int>();
-                var nonEmptyFns = new List<string>();
-
-
-                for (var i = 0; i < shares.Count; i++)
-                {
-                    var issuer = shares[i];
-
-                    // имя результирующего файла для дневных свечей. имя передается без расширения.
-                    var fnD1 = $"{shareName}_{dtBeg:yyMMdd}_{dtEnd:yyMMdd}";
-                    var fnD1Txt = fnD1 + ".txt";
-
-                    var ffnD1 = shareDirD1 + fnD1Txt;
-
-                    var url = GetUrl(dtBeg, dtEnd, fnD1, shareName, issuer.Market, issuer.Id, ETimeFrame.Day, DataFormat.CandleOptimal);
-                    urlsWriter.WriteLine(url);
-
-                    while (!TryDownload(url, ffnD1))
-                    {
-                    }
-
-
-                    // ищем не пустые файлы
-                    var length = new FileInfo(ffnD1).Length;
-                    if (length > 0)
-                    {
-                        nonEmptyShares.Add(i);
-                        nonEmptyFns.Add(fnD1Txt);
+                        market = shares[0].Market;
+                        id = shares[0].Id;
                     }
                     else
                     {
-                        File.Delete(ffnD1);
+                        // если выбор по moexClassica не удался, то выбираем вручную
+                        Console.WriteLine($"найдено акций с таким кодом: {shares.Count}");
+                        for (var i = 0; i < shares.Count; i++)
+                        {
+                            var issuer = shares[i];
+                            Console.WriteLine($"{i}\t{issuer.GetDescription()}");
+                        }
+
+                        Console.WriteLine($@"Введите порядковый номер акции которую скачать, либо иное - для выхода: ");
+                        var fTry = int.TryParse(Console.ReadLine(), out var num);
+                        if (fTry && 0 <= num && num < shares.Count)
+                        {
+                            market = shares[num].Market;
+                            id = shares[num].Id;
+                        }
+                        else
+                        {
+                            Console.WriteLine($"порядковый номер акции не найден");
+                            return;
+                        }
                     }
                 }
-
-
-
-                if (nonEmptyShares.Count == 0)
-                {
-                    Console.WriteLine($"Для всех issuer получены пустые файлы с датами");
-                    return;
-                }
-
-                foreach (var idx in nonEmptyShares)
-                {
-                    var issuer = shares[idx];
-                    var fn = nonEmptyFns[idx];
-
-                    if (nonEmptyShares.Count == 1)
-                    {
-                        var fnNew = $"{shareName}_{dtBeg:yyMMdd}_{dtEnd:yyMMdd}";
-                        File.Move(shareDir + fn, shareDir + fnNew);
-                        fn = fnNew;
-                    }
-
-                    DownloadTicksFromD1File(true, urlsWriter, shareDir, fn,
-                        shareName, issuer.Market, issuer.Id, fOverwrite);
-                }
-
             }
-            else
+
+            Assert.IsTrue(market != "-1" || id != "-1");
+
+            // имя результирующего файла для дневных свечей. имя передается без расширения.
+            var fnD1 = $"{shareName}_{dtBeg:yyMMdd}_{dtEnd:yyMMdd}";
+            var fnD1Txt = fnD1 + ".txt";
+
+            var ffnD1 = shareDirD1 + fnD1Txt;
+
+            var url = GetUrl(dtBeg, dtEnd, fnD1, shareName, market, id, ETimeFrame.Day, DataFormat.CandleOptimal);
+            urlsWriter.WriteLine(url);
+
+            while (!TryDownload(url, ffnD1))
             {
-                // имя результирующего файла для дневных свечей. имя передается без расширения.
-                var fnD1 = $"{shareName}_{dtBeg:yyMMdd}_{dtEnd:yyMMdd}";
-                var fnD1Txt = fnD1 + ".txt";
-
-                var ffnD1 = shareDirD1 + fnD1Txt;
-
-                var url = GetUrl(dtBeg, dtEnd, fnD1, shareName, marketNum, id, ETimeFrame.Day, DataFormat.CandleOptimal);
-                urlsWriter.WriteLine(url);
-
-                while (!TryDownload(url, ffnD1))
-                {
-                }
-
-
-                // ищем не пустые файлы
-                var length = new FileInfo(ffnD1).Length;
-                if (length == 0)
-                {
-                    File.Delete(ffnD1);
-                    Console.WriteLine("получен пустой файлы с датами");
-                    return;
-                }
-
-
-                DownloadTicksFromD1File(true, urlsWriter, shareDir, ffnD1,
-                    shareName, marketNum, id, fOverwrite);
             }
+
+
+            // ищем не пустые файлы
+            var length = new FileInfo(ffnD1).Length;
+            if (length == 0)
+            {
+                File.Delete(ffnD1);
+                Console.WriteLine("получен пустой файлы с датами");
+                return;
+            }
+
+
+            DownloadTicksFromD1File(true, urlsWriter, shareDir, ffnD1,
+                shareName, market, id, fOverwrite);
 
 
             urlsWriter.Close();
@@ -345,6 +311,93 @@ namespace FinamDownloader
                     }
                 }
                 Console.WriteLine(string.Empty);
+            }
+        }
+
+
+
+
+        /// <summary>
+        /// Попытка найти не нулевые акции из shares с кодом shareName
+        /// Вырезано из DownloadShares()
+        /// </summary>
+        /// <param name="issuers"></param>
+        private void TryToFindNoEmptyIssuers(List<FinamIssuer> issuers)
+        {
+            var shareName = "SBER";
+            var shares = issuers.FindAll(iss => iss.Name == shareName);
+
+
+            var dtBeg = new DateTime(1979, 1, 1);
+            var dtEnd = DateTime.Now.AddHours(-2);
+            var shareDirD1 = "";
+            var urlsWriter = new StreamWriter("");
+            var shareDir = "";
+
+
+            // 
+            // запросим дневные свечи за период [dtBeg; dtEnd] для каждого shares[i]
+            var nonEmptyShares = new List<int>();
+            var nonEmptyFns = new List<string>();
+
+
+            for (var i = 0; i < shares.Count; i++)
+            {
+                var issuer = shares[i];
+
+                //имя результирующего файла для дневных свечей. имя передается без расширения
+                var fnD1 = $"{shareName}_{dtBeg:yyMMdd}_{dtEnd:yyMMdd}";
+                var fnD1Txt = fnD1 + ".txt";
+
+
+
+                var ffnD1 = shareDirD1 + fnD1Txt;
+
+
+                var url = GetUrl(dtBeg, dtEnd, fnD1, shareName, issuer.Market, issuer.Id, ETimeFrame.Day,
+                    DataFormat.CandleOptimal);
+                urlsWriter.WriteLine(url);
+
+                while (!TryDownload(url, ffnD1))
+                { }
+
+
+                // ищем не пустые файлы
+                var length = new FileInfo(ffnD1).Length;
+                if (length > 0)
+                {
+                    nonEmptyShares.Add(i);
+                    nonEmptyFns.Add(fnD1Txt);
+                }
+                else
+                {
+                    File.Delete(ffnD1);
+                }
+            }
+
+
+
+            if (nonEmptyShares.Count == 0)
+            {
+                Console.WriteLine($"Для всех issuer получены пустые файлы с датами");
+                return;
+            }
+
+            foreach (var idx in nonEmptyShares)
+            {
+                var issuer = shares[idx];
+                var fn = nonEmptyFns[idx];
+
+                if (nonEmptyShares.Count == 1)
+                {
+
+                    var fnNew = $"{shareName}_{dtBeg:yyMMdd}_{dtEnd:yyMMdd}";
+                    File.Move(shareDir + fn, shareDir + fnNew);
+                    fn = fnNew;
+                }
+
+                DownloadTicksFromD1File(true, urlsWriter, shareDir, fn,
+                    shareName, issuer.Market, issuer.Id);
             }
         }
     }

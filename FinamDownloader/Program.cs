@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using System.Threading;
 using Engine;
@@ -34,7 +32,7 @@ namespace FinamDownloader
             // если разница с текущим временем более 1 дня, то пытаемся обновить автоматически.
             
             var ffnCheck = Directory.GetParent(ffnIcharts) + "\\check.txt";
-            if (!File.Exists(ffnCheck) || DateTime.Now - File.GetLastWriteTime(ffnCheck) > new TimeSpan(1, 0, 0))
+            if (!File.Exists(ffnCheck) || DateTime.Now - File.GetLastWriteTime(ffnCheck) > new TimeSpan(24, 0, 0))
             {
                 DownloadIchartsAndMark(ffnIcharts);
             }
@@ -77,7 +75,7 @@ namespace FinamDownloader
                         break;
 
                     case "3":
-                        DownloadFutures(issuers, false);
+                        DownloadFutures(issuers);
                         break;
 
                     case "4":
@@ -90,10 +88,6 @@ namespace FinamDownloader
 
                     case "6":
                         DownloadShares(issuers, true, true);
-                        break;
-
-
-                    default:
                         break;
                 }
             }
@@ -122,7 +116,7 @@ namespace FinamDownloader
         {
             var request = (HttpWebRequest)WebRequest.Create(uri);
             using (var response = (HttpWebResponse)request.GetResponse())
-            using (var reader = new StreamReader(response.GetResponseStream(), Encoding.Default, true, 8192))
+            using (var reader = new StreamReader(response.GetResponseStream() ?? throw new InvalidOperationException(), Encoding.Default, true, 8192))
             {
                 return reader.ReadToEnd();
             }
@@ -264,7 +258,7 @@ namespace FinamDownloader
             // если найдено более 5 эмитентов, то спрашиваем надо ли печатать
             if (issuersList.Count > max)
             {
-                var bCh = "";
+                string bCh;
                 do
                 {
                     Console.WriteLine(@"do you want to print all of issuersList names?");

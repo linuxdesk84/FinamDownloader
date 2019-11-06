@@ -4,6 +4,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 15.0.27703.2047
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinamDownloader", "FinamDownloader\FinamDownloader.csproj", "{D4E85AFF-D848-4A01-AE41-419A74927F97}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3F7D9DD9-F37A-4266-8D95-45C590D7B6C2} = {3F7D9DD9-F37A-4266-8D95-45C590D7B6C2}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinDownEntity", "FinDownEntity\FinDownEntity.csproj", "{3F7D9DD9-F37A-4266-8D95-45C590D7B6C2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +20,10 @@ Global
 		{D4E85AFF-D848-4A01-AE41-419A74927F97}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D4E85AFF-D848-4A01-AE41-419A74927F97}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D4E85AFF-D848-4A01-AE41-419A74927F97}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3F7D9DD9-F37A-4266-8D95-45C590D7B6C2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3F7D9DD9-F37A-4266-8D95-45C590D7B6C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3F7D9DD9-F37A-4266-8D95-45C590D7B6C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3F7D9DD9-F37A-4266-8D95-45C590D7B6C2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -14,7 +14,8 @@ namespace FinamDownloader
 {
     internal partial class Program
     {
-        private const string HistoryDataDir = @"c:\Users\admin\Documents\SyncDocs\HistoryData\";
+        //private const string HistoryDataDir = @"c:\Users\admin\Documents\SyncDocs\HistoryData\";
+        private const string HistoryDataDir = @"d:\HistoryData\";
 
         private static void Main()
         {

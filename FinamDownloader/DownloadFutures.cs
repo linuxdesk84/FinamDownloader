@@ -43,34 +43,21 @@ namespace FinamDownloader
             }
 
 
-            const int futBaseCodeLen = 2; // for example: BR, MX, MM, SR
+            Console.Write(@"Enter future Base name (for example: BR, MX, MM, SR, etc.): ");
+
+            var futBaseName = Console.ReadLine();
+            Assert.IsTrue(futBaseName != null && futBaseName.Length == 2);
+
             const int futCodeLen = 4; // for example: BRU9, MXZ7, etc.
 
-
-            Console.Write(@"Enter future base Code (for example: BR, MX, MM, SR, etc.");
-            var futBaseCode = Console.ReadLine();
-            Assert.IsTrue(futBaseCode != null && futBaseCode.Length >= futBaseCodeLen);
-
-            var futBaseName = futBaseCode;
-            switch (futBaseCode) {
-                case "MX":
-                    futBaseName = "MIX";
-                    break;
-                case "MM":
-                    futBaseName = "MXI";
-                    break;
-            }
-            futBaseName += '-'; // "BR" -> "BR-" or "MIX" -> "MIX-"
-
+            futBaseName += '-'; // "BR" -> "BR-"
             var futList = issuers.FindAll(issuer =>
-                issuer.Code.Length == futCodeLen &&
-                issuer.Code.Substring(0, futBaseCode.Length) == futBaseCode &&
                 issuer.Name.Length >= futBaseName.Length &&
                 issuer.Name.Substring(0, futBaseName.Length) == futBaseName &&
-                true);
+                futCodeLen == issuer.Code.Length);
 
 
-            var futBaseDir = HistoryDataDir + futBaseCode + "\\";
+            var futBaseDir = HistoryDataDir + futBaseName + "\\";
             Directory.CreateDirectory(futBaseDir);
             
 
@@ -80,14 +67,14 @@ namespace FinamDownloader
             {
                 /* приставка "SPFB.", которую автоматически формирует сайт финама при запросе,
                  не обязательна для корректного скачивания по сформированным urls */
-                var name = fut.Name.Split('(')[0]; // "BR-1.09(BRF9)" -> "BR-1.09"
+                var code = fut.Name.Split('(')[0]; // "BR-1.09(BRF9)" -> "BR-1.09"
 
                 // дата экспирации
-                var expDateStr = name.Substring(futBaseName.Length).Split('.'); // "BR-1.09" -> "1.09" -> { "1", "09" }
+                var expDateStr = code.Substring(futBaseName.Length).Split('.'); // "BR-1.09" -> "1.09" -> { "1", "09" }
                 var expDateM = Convert.ToInt32(expDateStr[0]);
                 var expDateY = 2000 + Convert.ToInt32(expDateStr[1]);
 
-                var futName = futBaseCode + "-" + $"{expDateY}.{expDateM:D2}"; // BR-2009.01
+                var futName = futBaseName + $"{expDateY}.{expDateM:D2}"; // BR-2009.01
 
                 // для каждого фьюча запросим его дневные свечи за период [3 года до экспирации; 1 мес после экспирации]
                 var expDt = new DateTime(expDateY, expDateM, 1);

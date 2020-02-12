@@ -1,12 +1,10 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 
-namespace FinDownEntity
-{
+namespace FinDownEntity {
     /// <summary>
     /// Разделитель полей (Comma, Dot, Semicolon, Tab, Space)
     /// </summary>
-    public enum FieldSeparator
-    {
+    public enum FieldSeparator {
         /// <summary>
         /// запятая.
         /// Лучше не использовать, т.к. является разделителем дробной части в русской локали
@@ -38,8 +36,7 @@ namespace FinDownEntity
     /// <summary>
     /// Разделитель разрядов (None, Dot, Comma, Space, Quote)
     /// </summary>
-    public enum BitSeparator
-    {
+    public enum BitSeparator {
         /// <summary>
         /// нет
         /// </summary>
@@ -69,22 +66,11 @@ namespace FinDownEntity
     /// <summary>
     /// Формат записи в файл (CandleAllParam, CandleOptimal, TickOptimal).
     /// </summary>
-    public enum DataFormat
-    {
-        /// <summary>
-        /// TICKER, PER, DATE, TIME, OPEN, HIGH, LOW, CLOSE, VOL
-        /// </summary>
-        CandleAllParam = 1,
-
+    public enum DataFormat {
         /// <summary>
         /// DATE, TIME, OPEN, HIGH, LOW, CLOSE, VOL
         /// </summary>
         CandleOptimal = 5,
-
-        /// <summary>
-        /// DATE, TIME, LAST
-        /// </summary>
-        TickMinimal = 10,
 
         /// <summary>
         /// DATE, TIME, LAST, VOL, ID, OPER
@@ -94,30 +80,29 @@ namespace FinDownEntity
         /* При парсе icharts.js находится только 11 форматов представления данных. 12 там нет.
            В то же время, при запросе тиковых данных через сайт, сгенерированный url содержит "datf=12".
            2019.08.24 экспериментально выяснил, что параметр datf может быть от 1 до 12, все остальные
-           варианты (перебрал от 0 до 18) аналогичны datf=10 (но при этом отсутствует заголовок).
-           Оставил только 4 формата, потому что использовать другие нет смысла.
+           варианты (перебрал от 0 до 18) аналогичны datf=10 (но при этом отсутствует заголовок (header)).
+           Оставил только 2 формата, потому что использовать другие нет смысла.
            
            Полная картина:
-           1  TICKER, PER, DATE, TIME, OPEN, HIGH, LOW, CLOSE, VOL -- CandleAllParam
-           2  TICKER, PER, DATE, TIME, OPEN, HIGH, LOW, CLOSE
-           3  TICKER, PER, DATE, TIME, CLOSE, VOL
-           4  TICKER, PER, DATE, TIME, CLOSE
-           5  DATE, TIME, OPEN, HIGH, LOW, CLOSE, VOL              -- CandleOptimal
-           6  TICKER, PER, DATE, TIME, LAST, VOL
-           7  TICKER, DATE, TIME, LAST, VOL
-           8  TICKER, DATE, TIME, LAST
-           9  DATE, TIME, LAST, VOL
-           10 DATE, TIME, LAST                                     -- TickMinimal
-           11 DATE, TIME, LAST, VOL, ID
-           12 DATE, TIME, LAST, VOL, ID, OPER                      -- TickOptimal
+           1  TICKER, PER, DATE, TIME, OPEN, HIGH, LOW, CLOSE, VOL -- C
+           2  TICKER, PER, DATE, TIME, OPEN, HIGH, LOW, CLOSE      -- C
+           3  TICKER, PER, DATE, TIME, CLOSE, VOL                  -- C
+           4  TICKER, PER, DATE, TIME, CLOSE                       -- C
+           5  DATE, TIME, OPEN, HIGH, LOW, CLOSE, VOL              -- CandleOptimal = 5
+           6  TICKER, PER, DATE, TIME, LAST, VOL                   -- T
+           7  TICKER, DATE, TIME, LAST, VOL                        -- T
+           8  TICKER, DATE, TIME, LAST                             -- T
+           9  DATE, TIME, LAST, VOL                                -- T
+           10 DATE, TIME, LAST                                     -- T
+           11 DATE, TIME, LAST, VOL, ID                            -- T
+           12 DATE, TIME, LAST, VOL, ID, OPER                      -- TickOptimal = 12
          */
     }
 
     /// <summary>
     /// Время свечи (Open - время начала свечи, Close - время завершения свечи)
     /// </summary>
-    public enum CandleTime
-    {
+    public enum CandleTime {
         /// <summary>
         /// Время свечи = времени ее начала
         /// </summary>
@@ -133,8 +118,7 @@ namespace FinDownEntity
     /// Формат даты (YYYYMMDD, YYMMDD, DDMMYY, DD_MM_YY, MM_DD_YY)
     /// </summary>
     [SuppressMessage("ReSharper", "InconsistentNaming")]
-    public enum DateFormat
-    {
+    public enum DateFormat {
         /// <summary>
         /// ГГГГММДД
         /// </summary>
@@ -167,8 +151,7 @@ namespace FinDownEntity
     /// Формат времени (HHMMSS, HHMM, HH_MM_SS, HH_MM)
     /// </summary>
     [SuppressMessage("ReSharper", "InconsistentNaming")]
-    public enum TimeFormat
-    {
+    public enum TimeFormat {
         /// <summary>
         /// ЧЧММСС
         /// </summary>
@@ -193,10 +176,8 @@ namespace FinDownEntity
     /// <summary>
     /// Нужны ли заголовки столбцов ?
     /// </summary>
-    public enum ColumnHeaderNeed
-    {
+    public enum ColumnHeaderNeed {
         No = 0,
         Yes = 1,
     }
-
 }

@@ -313,7 +313,7 @@ namespace FinamDownloader
 
         //issuer.Market, issuer.Id
         private static string GetUrl(DateTime dtF, DateTime dtT, string rezultFn, string code, string market, string id, ETimeFrame tf,
-            DataFormat datf = DataFormat.CandleAllParam,
+            DataFormat datf = DataFormat.CandleOptimal,
             DateFormat dtf = DateFormat.DD_MM_YY,
             TimeFormat tmf = TimeFormat.HH_MM_SS,
             CandleTime ct = CandleTime.Open,

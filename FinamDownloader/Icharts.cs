@@ -53,10 +53,6 @@ namespace FinamDownloader
                     ? "Id\tName\tCode\tMarket"
                     : "Id\tName\tCode\tMarket\tDecp\tChild\tUrl";
             }
-
-            public override string ToString() {
-                return $"{Name},{Id}";
-            }
         }
 
         /// <summary>

@@ -51,7 +51,7 @@ namespace FinamDownloader
             const int futCodeLen = 4; // for example: BRU9, MXZ7, etc.
 
             var futList = issuers.FindAll(issuer =>
-                issuer.Name.Length >= futBaseName.Length &&
+                issuer.Name.Contains('.') && issuer.Name.Contains('-') &&
                 futCodeLen == issuer.Code.Length &&
                 issuer.Code.Substring(0, futBaseName.Length) == futBaseName);
 

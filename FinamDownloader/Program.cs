@@ -15,7 +15,7 @@ namespace FinamDownloader
     internal partial class Program
     {
         //private const string HistoryDataDir = @"c:\Users\admin\Documents\SyncDocs\HistoryData\";
-        private const string HistoryDataDir = @"d:\HistoryData\";
+        private const string HistoryDataDir = @"D:\sync320\HistoryData\";
 
         private static void Main()
         {
@@ -26,7 +26,8 @@ namespace FinamDownloader
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
             //ServicePointManager.SecurityProtocol = (SecurityProtocolType)3072;
 
-            const string ffnIcharts = @"d:\SyncDirs\main\pdata\visualstudio\FinamDownloader\icharts\icharts.js";
+            // todo сделать эту папку получаемой из программы
+            const string ffnIcharts = @"c:\Users\admin\Documents\main\programming\visualstudio\FinamDownloader\icharts\icharts.js";
 
 
             // по времени модификации файла ffnCheckDate будем определять надо ли закачивать новый icharts.js

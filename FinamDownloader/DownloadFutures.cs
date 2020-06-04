@@ -50,11 +50,13 @@ namespace FinamDownloader
 
             const int futCodeLen = 4; // for example: BRU9, MXZ7, etc.
 
-            futBaseName += '-'; // "BR" -> "BR-"
             var futList = issuers.FindAll(issuer =>
                 issuer.Name.Length >= futBaseName.Length &&
-                issuer.Name.Substring(0, futBaseName.Length) == futBaseName &&
-                futCodeLen == issuer.Code.Length);
+                futCodeLen == issuer.Code.Length &&
+                issuer.Code.Substring(0, futBaseName.Length) == futBaseName);
+
+
+            futBaseName += '-'; // "BR" -> "BR-"
 
 
             var futBaseDir = HistoryDataDir + futBaseName + "\\";
@@ -70,7 +72,8 @@ namespace FinamDownloader
                 var code = fut.Name.Split('(')[0]; // "BR-1.09(BRF9)" -> "BR-1.09"
 
                 // дата экспирации
-                var expDateStr = code.Substring(futBaseName.Length).Split('.'); // "BR-1.09" -> "1.09" -> { "1", "09" }
+                var sDate = code.Split('-')[1]; // // "BR-1.09" -> "1.09"
+                var expDateStr = sDate.Split('.'); // "1.09" -> { "1", "09" }
                 var expDateM = Convert.ToInt32(expDateStr[0]);
                 var expDateY = 2000 + Convert.ToInt32(expDateStr[1]);
 

@@ -230,6 +230,7 @@ namespace FinamDownloader
         {
             Assert.IsTrue(File.Exists(ffnD1));
 
+            // todo Date
             var curDt = DateTime.Now.AddHours(-2); // корректировка на мск
 
             // читаем файл со свечами D1, и скачиваем за каждую доступную дату тики
@@ -259,7 +260,7 @@ namespace FinamDownloader
                     // скачиваем тиковые данные за только за завершенные периоды
                     if (dtTick >= curDt)
                     {
-                        continue;
+                        continue; // or break;
                     }
 
 
@@ -293,7 +294,6 @@ namespace FinamDownloader
                             isExistsTick = false;
                         }
 
-                        // а может архив не удалять?
                         if (isExistsTick7Z)
                         {
                             File.Delete(ffnTick7Z);

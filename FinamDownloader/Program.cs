@@ -284,15 +284,14 @@ namespace FinamDownloader
 
 
         /// <summary>
-        /// Попытка выполнить загрузку (true - успешно, false - ошибка)
+        /// Попытка выполнить загрузку данных по адресу url, и сохранить в файл fn.
+        /// После выполнения попытки поток спит 1000 мс
         /// </summary>
         /// <param name="url">сгенерированный url</param>
         /// <param name="fn">имя результирующего файла</param>
-        /// <returns></returns>
+        /// <returns>true - успешно, false - ошибка</returns>
         public static bool TryDownload(string url, string fn)
         {
-            
-
             // результат выполнения загрузки
             var res = true;
 
@@ -312,8 +311,27 @@ namespace FinamDownloader
         }
 
 
-        //issuer.Market, issuer.Id
-        private static string GetUrl(DateTime dtF, DateTime dtT, string rezultFn, string code, string market, string id, ETimeFrame tf,
+        /// <summary>
+        /// Формируем url, понимаемый финамом, для передачи его загрузчику
+        /// </summary>
+        /// <param name="dtF">Начальная дата</param>
+        /// <param name="dtT">Конечная дата</param>
+        /// <param name="rezultFn">Имя сформированного файла</param>
+        /// <param name="code">issuer.Name</param>
+        /// <param name="market">issuer.Market</param>
+        /// <param name="id">issuer.Id</param>
+        /// <param name="tf">Таймфрейм</param>
+        /// <param name="datf">Формат записи в файл. По умолчанию: DataFormat.CandleOptimal</param>
+        /// <param name="dtf">формат даты. По умолчанию: DateFormat.DD_MM_YY</param>
+        /// <param name="tmf">формат времени. По умолчанию: TimeFormat.HH_MM_SS</param>
+        /// <param name="ct">Время свечи (0 - open; 1 - close). По умолчанию: CandleTime.Open</param>
+        /// <param name="fs">Разделитель полей. По умолчанию: FieldSeparator.Tab</param>
+        /// <param name="bs">Разделитель разрядов. По умолчанию: BitSeparator.None</param>
+        /// <param name="at">Нужны ли заголовки столбцов (0 - нет, 1 - да). По умолчанию: ColumnHeaderNeed.Yes</param>
+        /// <returns></returns>
+        private static string GetUrl(DateTime dtF, DateTime dtT, string rezultFn,
+            string code, string market, string id,
+            ETimeFrame tf,
             DataFormat datf = DataFormat.CandleOptimal,
             DateFormat dtf = DateFormat.DD_MM_YY,
             TimeFormat tmf = TimeFormat.HH_MM_SS,
@@ -322,6 +340,7 @@ namespace FinamDownloader
             BitSeparator bs = BitSeparator.None,
             ColumnHeaderNeed at = ColumnHeaderNeed.Yes)
         {
+            // для запроса тиковых данных требуем формат данных TickOptimal
             Assert.IsTrue(tf == ETimeFrame.Tick && datf == DataFormat.TickOptimal ||
                           tf != ETimeFrame.Tick && datf != DataFormat.TickOptimal);
 
@@ -329,36 +348,36 @@ namespace FinamDownloader
             // генерируем url
             var url = "http://export.finam.ru/" +
                       $"{rezultFn}.txt?" +
-                      $"market={market}&" + // Номер рынка
-                      $"em={id}&" + // Номер инструмента
-                      $"code={code}&" + // Тикер инструмента
+                      $"market={market}&" +
+                      $"em={id}&" +
+                      $"code={code}&" +
                       $"apply=0&" + // ?
 
-                      $"df={dtF.Day}&" + // Начальная дата, номер дня (1-31)
-                      $"mf={dtF.Month - 1}&" + // Начальная дата, номер месяца (0-11)
-                      $"yf={dtF.Year}&" + // Начальная дата, год
+                      $"df={dtF.Day}&" +
+                      $"mf={dtF.Month - 1}&" + // номер месяца (0-11)
+                      $"yf={dtF.Year}&" +
                       $"from={dtF:dd.MM.yyyy}&" + // Начальная дата в формате "ДД.ММ.ГГГГ" (здесь месяцы от 1 до 12)
 
-                      $"dt={dtT.Day}&" + // Конечная дата, номер дня (1-31)
-                      $"mt={dtT.Month - 1}&" + // Конечная дата, номер месяца (0-11)
-                      $"yt={dtT.Year}&" + // Конечная дата, год
+                      $"dt={dtT.Day}&" +
+                      $"mt={dtT.Month - 1}&" + // номер месяца (0-11)
+                      $"yt={dtT.Year}&" +
                       $"to={dtT:dd.MM.yyyy}&" + // Конечная дата в формате "ДД.ММ.ГГГГ" (здесь месяцы от 1 до 12)
 
-                      $"p={(int) tf}&" + // Таймфрейм
-                      $"f={rezultFn}&" + // Имя сформированного файла
+                      $"p={(int) tf}&" +
+                      $"f={rezultFn}&" + 
                       $"e=.txt&" + // Расширение сформированного файла: ".txt" или ".csv"
-                      $"cn={code}&" + // Имя контракта
+                      $"cn={code}&" +
 
-                      $"dtf={(int) dtf}&" + // Номер формата дат
-                      $"tmf={(int) tmf}&" + // Номер формата времени
-                      $"MSOR={(int) ct}&" + // Время свечи (0 - open; 1 - close)
+                      $"dtf={(int) dtf}&" +
+                      $"tmf={(int) tmf}&" +
+                      $"MSOR={(int) ct}&" +
 
                       $"mstime=on&" + // Московское время	( "on", "off")
                       $"mstimever=1&" + // Коррекция часового пояса
-                      $"sep={(int) fs}&" + // Разделитель полей
-                      $"sep2={(int) bs}&" + // Разделитель разрядов
-                      $"datf={(int) datf}&" + // Формат записи в файл
-                      $"at={(int) at}"; // Нужны ли заголовки столбцов (0 - нет, 1 - да)
+                      $"sep={(int) fs}&" +
+                      $"sep2={(int) bs}&" +
+                      $"datf={(int) datf}&" +
+                      $"at={(int) at}";
 
             return url;
         }

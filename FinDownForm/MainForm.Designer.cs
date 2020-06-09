@@ -31,29 +31,30 @@
             this.fldLog = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
             this.fldIssuerName = new System.Windows.Forms.TextBox();
-            this.chEqual = new System.Windows.Forms.CheckBox();
+            this.chEqualName = new System.Windows.Forms.CheckBox();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.butSearch = new System.Windows.Forms.Button();
-            this.chOverwrite = new System.Windows.Forms.CheckBox();
-            this.chSkipUnfinished = new System.Windows.Forms.CheckBox();
-            this.butDownload = new System.Windows.Forms.Button();
-            this.groupBox2 = new System.Windows.Forms.GroupBox();
-            this.label2 = new System.Windows.Forms.Label();
-            this.fldPathIcharts = new System.Windows.Forms.TextBox();
-            this.butOpen = new System.Windows.Forms.Button();
-            this.butUpdate = new System.Windows.Forms.Button();
+            this.chAllTime = new System.Windows.Forms.CheckBox();
+            this.dtpPeriodBeg = new System.Windows.Forms.DateTimePicker();
+            this.dtpPeriodEnd = new System.Windows.Forms.DateTimePicker();
             this.chFutures = new System.Windows.Forms.CheckBox();
+            this.butDownload = new System.Windows.Forms.Button();
+            this.chSkipUnfinished = new System.Windows.Forms.CheckBox();
+            this.chOverwrite = new System.Windows.Forms.CheckBox();
+            this.butSearch = new System.Windows.Forms.Button();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
             this.lblIssuersCount = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStripStatusLabel2 = new System.Windows.Forms.ToolStripStatusLabel();
-            this.lblDownloaded = new System.Windows.Forms.ToolStripStatusLabel();
-            this.dateTimePicker1 = new System.Windows.Forms.DateTimePicker();
-            this.dateTimePicker2 = new System.Windows.Forms.DateTimePicker();
-            this.chAllTime = new System.Windows.Forms.CheckBox();
+            this.lblDownloadedCount = new System.Windows.Forms.ToolStripStatusLabel();
+            this.groupBox2 = new System.Windows.Forms.GroupBox();
+            this.label2 = new System.Windows.Forms.Label();
+            this.fldIssuerMarket = new System.Windows.Forms.TextBox();
+            this.label3 = new System.Windows.Forms.Label();
+            this.fldIssuerId = new System.Windows.Forms.TextBox();
+            this.butSettings = new System.Windows.Forms.Button();
             this.groupBox1.SuspendLayout();
-            this.groupBox2.SuspendLayout();
             this.statusStrip1.SuspendLayout();
+            this.groupBox2.SuspendLayout();
             this.SuspendLayout();
             // 
             // fldLog
@@ -61,152 +62,86 @@
             this.fldLog.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.fldLog.Location = new System.Drawing.Point(13, 176);
+            this.fldLog.Location = new System.Drawing.Point(12, 197);
+            this.fldLog.MaxLength = 4194305;
             this.fldLog.Multiline = true;
             this.fldLog.Name = "fldLog";
-            this.fldLog.Size = new System.Drawing.Size(399, 185);
+            this.fldLog.ReadOnly = true;
+            this.fldLog.ScrollBars = System.Windows.Forms.ScrollBars.Both;
+            this.fldLog.Size = new System.Drawing.Size(360, 132);
             this.fldLog.TabIndex = 0;
             // 
             // label1
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(13, 13);
+            this.label1.Location = new System.Drawing.Point(8, 16);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(63, 13);
+            this.label1.Size = new System.Drawing.Size(39, 13);
             this.label1.TabIndex = 2;
-            this.label1.Text = "issuer name";
+            this.label1.Text = "name";
+            this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // fldIssuerName
             // 
-            this.fldIssuerName.Location = new System.Drawing.Point(82, 10);
+            this.fldIssuerName.Location = new System.Drawing.Point(53, 13);
             this.fldIssuerName.Name = "fldIssuerName";
-            this.fldIssuerName.Size = new System.Drawing.Size(100, 20);
+            this.fldIssuerName.Size = new System.Drawing.Size(69, 20);
             this.fldIssuerName.TabIndex = 3;
             // 
-            // chEqual
+            // chEqualName
             // 
-            this.chEqual.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.chEqual.AutoSize = true;
-            this.chEqual.Location = new System.Drawing.Point(271, 12);
-            this.chEqual.Name = "chEqual";
-            this.chEqual.Size = new System.Drawing.Size(52, 17);
-            this.chEqual.TabIndex = 4;
-            this.chEqual.Text = "equal";
-            this.chEqual.UseVisualStyleBackColor = true;
+            this.chEqualName.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.chEqualName.AutoSize = true;
+            this.chEqualName.Location = new System.Drawing.Point(203, 84);
+            this.chEqualName.Name = "chEqualName";
+            this.chEqualName.Size = new System.Drawing.Size(81, 17);
+            this.chEqualName.TabIndex = 4;
+            this.chEqualName.Text = "equal name";
+            this.chEqualName.UseVisualStyleBackColor = true;
             // 
             // groupBox1
             // 
             this.groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.groupBox1.Controls.Add(this.chAllTime);
-            this.groupBox1.Controls.Add(this.dateTimePicker2);
-            this.groupBox1.Controls.Add(this.dateTimePicker1);
+            this.groupBox1.Controls.Add(this.dtpPeriodBeg);
+            this.groupBox1.Controls.Add(this.dtpPeriodEnd);
             this.groupBox1.Controls.Add(this.chFutures);
             this.groupBox1.Controls.Add(this.butDownload);
             this.groupBox1.Controls.Add(this.chSkipUnfinished);
             this.groupBox1.Controls.Add(this.chOverwrite);
-            this.groupBox1.Location = new System.Drawing.Point(12, 37);
+            this.groupBox1.Location = new System.Drawing.Point(12, 112);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(400, 79);
+            this.groupBox1.Size = new System.Drawing.Size(360, 79);
             this.groupBox1.TabIndex = 5;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "downloads";
             // 
-            // butSearch
+            // chAllTime
             // 
-            this.butSearch.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.butSearch.Location = new System.Drawing.Point(337, 8);
-            this.butSearch.Name = "butSearch";
-            this.butSearch.Size = new System.Drawing.Size(75, 23);
-            this.butSearch.TabIndex = 6;
-            this.butSearch.Text = "Search";
-            this.butSearch.UseVisualStyleBackColor = true;
+            this.chAllTime.AutoSize = true;
+            this.chAllTime.Location = new System.Drawing.Point(10, 23);
+            this.chAllTime.Name = "chAllTime";
+            this.chAllTime.Size = new System.Drawing.Size(58, 17);
+            this.chAllTime.TabIndex = 11;
+            this.chAllTime.Text = "all time";
+            this.chAllTime.UseVisualStyleBackColor = true;
+            this.chAllTime.CheckedChanged += new System.EventHandler(this.chAllTime_CheckedChanged);
             // 
-            // chOverwrite
+            // dtpPeriodBeg
             // 
-            this.chOverwrite.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.chOverwrite.AutoSize = true;
-            this.chOverwrite.Location = new System.Drawing.Point(238, 52);
-            this.chOverwrite.Name = "chOverwrite";
-            this.chOverwrite.Size = new System.Drawing.Size(69, 17);
-            this.chOverwrite.TabIndex = 2;
-            this.chOverwrite.Text = "overwrite";
-            this.chOverwrite.UseVisualStyleBackColor = true;
-            this.chOverwrite.CheckedChanged += new System.EventHandler(this.chOverWrite_CheckedChanged);
+            this.dtpPeriodBeg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.dtpPeriodBeg.Location = new System.Drawing.Point(101, 20);
+            this.dtpPeriodBeg.Name = "dtpPeriodBeg";
+            this.dtpPeriodBeg.Size = new System.Drawing.Size(123, 20);
+            this.dtpPeriodBeg.TabIndex = 10;
             // 
-            // chSkipUnfinished
+            // dtpPeriodEnd
             // 
-            this.chSkipUnfinished.AutoSize = true;
-            this.chSkipUnfinished.Location = new System.Drawing.Point(70, 52);
-            this.chSkipUnfinished.Name = "chSkipUnfinished";
-            this.chSkipUnfinished.Size = new System.Drawing.Size(96, 17);
-            this.chSkipUnfinished.TabIndex = 3;
-            this.chSkipUnfinished.Text = "skip unfinished";
-            this.chSkipUnfinished.UseVisualStyleBackColor = true;
-            this.chSkipUnfinished.CheckedChanged += new System.EventHandler(this.checkBox1_CheckedChanged);
-            // 
-            // butDownload
-            // 
-            this.butDownload.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.butDownload.Location = new System.Drawing.Point(313, 48);
-            this.butDownload.Name = "butDownload";
-            this.butDownload.Size = new System.Drawing.Size(75, 23);
-            this.butDownload.TabIndex = 4;
-            this.butDownload.Text = "Download";
-            this.butDownload.UseVisualStyleBackColor = true;
-            // 
-            // groupBox2
-            // 
-            this.groupBox2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.groupBox2.Controls.Add(this.butUpdate);
-            this.groupBox2.Controls.Add(this.butOpen);
-            this.groupBox2.Controls.Add(this.fldPathIcharts);
-            this.groupBox2.Controls.Add(this.label2);
-            this.groupBox2.Location = new System.Drawing.Point(13, 122);
-            this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(399, 48);
-            this.groupBox2.TabIndex = 7;
-            this.groupBox2.TabStop = false;
-            this.groupBox2.Text = "icharts.js";
-            // 
-            // label2
-            // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(7, 20);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(28, 13);
-            this.label2.TabIndex = 0;
-            this.label2.Text = "path";
-            // 
-            // fldPathIcharts
-            // 
-            this.fldPathIcharts.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.fldPathIcharts.Location = new System.Drawing.Point(41, 17);
-            this.fldPathIcharts.Name = "fldPathIcharts";
-            this.fldPathIcharts.Size = new System.Drawing.Size(188, 20);
-            this.fldPathIcharts.TabIndex = 1;
-            // 
-            // butOpen
-            // 
-            this.butOpen.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.butOpen.Location = new System.Drawing.Point(235, 15);
-            this.butOpen.Name = "butOpen";
-            this.butOpen.Size = new System.Drawing.Size(75, 23);
-            this.butOpen.TabIndex = 2;
-            this.butOpen.Text = "Open";
-            this.butOpen.UseVisualStyleBackColor = true;
-            // 
-            // butUpdate
-            // 
-            this.butUpdate.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.butUpdate.Location = new System.Drawing.Point(316, 15);
-            this.butUpdate.Name = "butUpdate";
-            this.butUpdate.Size = new System.Drawing.Size(75, 23);
-            this.butUpdate.TabIndex = 3;
-            this.butUpdate.Text = "Update";
-            this.butUpdate.UseVisualStyleBackColor = true;
+            this.dtpPeriodEnd.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.dtpPeriodEnd.Location = new System.Drawing.Point(230, 20);
+            this.dtpPeriodEnd.Name = "dtpPeriodEnd";
+            this.dtpPeriodEnd.Size = new System.Drawing.Size(123, 20);
+            this.dtpPeriodEnd.TabIndex = 9;
             // 
             // chFutures
             // 
@@ -217,6 +152,50 @@
             this.chFutures.TabIndex = 8;
             this.chFutures.Text = "futures";
             this.chFutures.UseVisualStyleBackColor = true;
+            this.chFutures.CheckedChanged += new System.EventHandler(this.chFutures_CheckedChanged);
+            // 
+            // butDownload
+            // 
+            this.butDownload.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.butDownload.Location = new System.Drawing.Point(278, 48);
+            this.butDownload.Name = "butDownload";
+            this.butDownload.Size = new System.Drawing.Size(75, 23);
+            this.butDownload.TabIndex = 4;
+            this.butDownload.Text = "Download";
+            this.butDownload.UseVisualStyleBackColor = true;
+            // 
+            // chSkipUnfinished
+            // 
+            this.chSkipUnfinished.AutoSize = true;
+            this.chSkipUnfinished.Location = new System.Drawing.Point(70, 52);
+            this.chSkipUnfinished.Name = "chSkipUnfinished";
+            this.chSkipUnfinished.Size = new System.Drawing.Size(96, 17);
+            this.chSkipUnfinished.TabIndex = 3;
+            this.chSkipUnfinished.Text = "skip unfinished";
+            this.chSkipUnfinished.UseVisualStyleBackColor = true;
+            this.chSkipUnfinished.CheckedChanged += new System.EventHandler(this.chSkipUnfinished_CheckedChanged);
+            // 
+            // chOverwrite
+            // 
+            this.chOverwrite.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.chOverwrite.AutoSize = true;
+            this.chOverwrite.Location = new System.Drawing.Point(203, 52);
+            this.chOverwrite.Name = "chOverwrite";
+            this.chOverwrite.Size = new System.Drawing.Size(69, 17);
+            this.chOverwrite.TabIndex = 2;
+            this.chOverwrite.Text = "overwrite";
+            this.chOverwrite.UseVisualStyleBackColor = true;
+            this.chOverwrite.CheckedChanged += new System.EventHandler(this.chOverWrite_CheckedChanged);
+            // 
+            // butSearch
+            // 
+            this.butSearch.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.butSearch.Location = new System.Drawing.Point(290, 80);
+            this.butSearch.Name = "butSearch";
+            this.butSearch.Size = new System.Drawing.Size(75, 23);
+            this.butSearch.TabIndex = 6;
+            this.butSearch.Text = "Search";
+            this.butSearch.UseVisualStyleBackColor = true;
             // 
             // statusStrip1
             // 
@@ -224,10 +203,10 @@
             this.toolStripStatusLabel1,
             this.lblIssuersCount,
             this.toolStripStatusLabel2,
-            this.lblDownloaded});
-            this.statusStrip1.Location = new System.Drawing.Point(0, 380);
+            this.lblDownloadedCount});
+            this.statusStrip1.Location = new System.Drawing.Point(0, 340);
             this.statusStrip1.Name = "statusStrip1";
-            this.statusStrip1.Size = new System.Drawing.Size(424, 22);
+            this.statusStrip1.Size = new System.Drawing.Size(384, 22);
             this.statusStrip1.TabIndex = 8;
             this.statusStrip1.Text = "statusStrip1";
             // 
@@ -251,65 +230,93 @@
             this.toolStripStatusLabel2.Size = new System.Drawing.Size(76, 17);
             this.toolStripStatusLabel2.Text = "downloaded:";
             // 
-            // lblDownloaded
+            // lblDownloadedCount
             // 
-            this.lblDownloaded.AutoSize = false;
-            this.lblDownloaded.Name = "lblDownloaded";
-            this.lblDownloaded.Size = new System.Drawing.Size(40, 17);
-            this.lblDownloaded.Text = "0";
-            this.lblDownloaded.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.lblDownloadedCount.AutoSize = false;
+            this.lblDownloadedCount.Name = "lblDownloadedCount";
+            this.lblDownloadedCount.Size = new System.Drawing.Size(40, 17);
+            this.lblDownloadedCount.Text = "0";
+            this.lblDownloadedCount.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
-            // dateTimePicker1
+            // groupBox2
             // 
-            this.dateTimePicker1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.dateTimePicker1.Location = new System.Drawing.Point(239, 20);
-            this.dateTimePicker1.Name = "dateTimePicker1";
-            this.dateTimePicker1.Size = new System.Drawing.Size(149, 20);
-            this.dateTimePicker1.TabIndex = 9;
+            this.groupBox2.Controls.Add(this.label3);
+            this.groupBox2.Controls.Add(this.fldIssuerId);
+            this.groupBox2.Controls.Add(this.label2);
+            this.groupBox2.Controls.Add(this.fldIssuerMarket);
+            this.groupBox2.Controls.Add(this.label1);
+            this.groupBox2.Controls.Add(this.fldIssuerName);
+            this.groupBox2.Location = new System.Drawing.Point(12, 12);
+            this.groupBox2.Name = "groupBox2";
+            this.groupBox2.Size = new System.Drawing.Size(130, 94);
+            this.groupBox2.TabIndex = 10;
+            this.groupBox2.TabStop = false;
+            this.groupBox2.Text = "issuer";
             // 
-            // dateTimePicker2
+            // label2
             // 
-            this.dateTimePicker2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.dateTimePicker2.Location = new System.Drawing.Point(71, 20);
-            this.dateTimePicker2.Name = "dateTimePicker2";
-            this.dateTimePicker2.Size = new System.Drawing.Size(149, 20);
-            this.dateTimePicker2.TabIndex = 10;
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(8, 42);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(39, 13);
+            this.label2.TabIndex = 4;
+            this.label2.Text = "market";
+            this.label2.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
-            // chAllTime
+            // fldIssuerMarket
             // 
-            this.chAllTime.AutoSize = true;
-            this.chAllTime.Checked = true;
-            this.chAllTime.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.chAllTime.Location = new System.Drawing.Point(11, 20);
-            this.chAllTime.Name = "chAllTime";
-            this.chAllTime.Size = new System.Drawing.Size(58, 17);
-            this.chAllTime.TabIndex = 11;
-            this.chAllTime.Text = "all time";
-            this.chAllTime.UseVisualStyleBackColor = true;
+            this.fldIssuerMarket.Location = new System.Drawing.Point(53, 39);
+            this.fldIssuerMarket.Name = "fldIssuerMarket";
+            this.fldIssuerMarket.Size = new System.Drawing.Size(69, 20);
+            this.fldIssuerMarket.TabIndex = 5;
+            // 
+            // label3
+            // 
+            this.label3.Location = new System.Drawing.Point(8, 68);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(39, 13);
+            this.label3.TabIndex = 6;
+            this.label3.Text = "id";
+            this.label3.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // fldIssuerId
+            // 
+            this.fldIssuerId.Location = new System.Drawing.Point(53, 65);
+            this.fldIssuerId.Name = "fldIssuerId";
+            this.fldIssuerId.Size = new System.Drawing.Size(69, 20);
+            this.fldIssuerId.TabIndex = 7;
+            // 
+            // butSettings
+            // 
+            this.butSettings.Location = new System.Drawing.Point(290, 18);
+            this.butSettings.Name = "butSettings";
+            this.butSettings.Size = new System.Drawing.Size(75, 23);
+            this.butSettings.TabIndex = 11;
+            this.butSettings.Text = "Settings";
+            this.butSettings.UseVisualStyleBackColor = true;
             // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(424, 402);
-            this.Controls.Add(this.statusStrip1);
+            this.ClientSize = new System.Drawing.Size(384, 362);
+            this.Controls.Add(this.butSettings);
             this.Controls.Add(this.groupBox2);
+            this.Controls.Add(this.statusStrip1);
             this.Controls.Add(this.butSearch);
             this.Controls.Add(this.groupBox1);
-            this.Controls.Add(this.chEqual);
-            this.Controls.Add(this.fldIssuerName);
-            this.Controls.Add(this.label1);
+            this.Controls.Add(this.chEqualName);
             this.Controls.Add(this.fldLog);
-            this.MinimumSize = new System.Drawing.Size(440, 440);
+            this.MinimumSize = new System.Drawing.Size(400, 400);
             this.Name = "MainForm";
-            this.Text = "Form1";
+            this.Text = "FinamDownloader";
             this.Load += new System.EventHandler(this.MainForm_Load);
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
-            this.groupBox2.ResumeLayout(false);
-            this.groupBox2.PerformLayout();
             this.statusStrip1.ResumeLayout(false);
             this.statusStrip1.PerformLayout();
+            this.groupBox2.ResumeLayout(false);
+            this.groupBox2.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -320,26 +327,27 @@
         private System.Windows.Forms.TextBox fldLog;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.TextBox fldIssuerName;
-        private System.Windows.Forms.CheckBox chEqual;
+        private System.Windows.Forms.CheckBox chEqualName;
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.Button butDownload;
         private System.Windows.Forms.CheckBox chSkipUnfinished;
         private System.Windows.Forms.CheckBox chOverwrite;
         private System.Windows.Forms.Button butSearch;
-        private System.Windows.Forms.GroupBox groupBox2;
-        private System.Windows.Forms.Button butUpdate;
-        private System.Windows.Forms.Button butOpen;
-        private System.Windows.Forms.TextBox fldPathIcharts;
-        private System.Windows.Forms.Label label2;
         private System.Windows.Forms.CheckBox chFutures;
         private System.Windows.Forms.CheckBox chAllTime;
-        private System.Windows.Forms.DateTimePicker dateTimePicker2;
-        private System.Windows.Forms.DateTimePicker dateTimePicker1;
+        private System.Windows.Forms.DateTimePicker dtpPeriodBeg;
+        private System.Windows.Forms.DateTimePicker dtpPeriodEnd;
         private System.Windows.Forms.StatusStrip statusStrip1;
         private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel1;
         private System.Windows.Forms.ToolStripStatusLabel lblIssuersCount;
         private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel2;
-        private System.Windows.Forms.ToolStripStatusLabel lblDownloaded;
+        private System.Windows.Forms.ToolStripStatusLabel lblDownloadedCount;
+        private System.Windows.Forms.GroupBox groupBox2;
+        private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.TextBox fldIssuerId;
+        private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.TextBox fldIssuerMarket;
+        private System.Windows.Forms.Button butSettings;
     }
 }
 

@@ -58,6 +58,7 @@
   <ItemGroup>
     <Compile Include="DownloadFutures.cs" />
     <Compile Include="DownloadShares.cs" />
+    <Compile Include="FinamIssuer.cs" />
     <Compile Include="Icharts.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -11,51 +11,6 @@ namespace FinamDownloader
     internal partial class Program
     {
         /// <summary>
-        /// Эмитент
-        /// </summary>
-        private class FinamIssuer
-        {
-            public string Id { get; }
-
-            public string Name { get; }
-
-            public string Code { get; }
-
-            public string Market { get; }
-
-            public int Decp { get; }
-
-            public int Child { get; }
-
-            public string Url { get; }
-
-            public FinamIssuer(string id, string name, string code, string market, int decp, int child, string url)
-            {
-                Id = id;
-                Name = name;
-                Code = code;
-                Market = market;
-                Decp = decp;
-                Child = child;
-                Url = url;
-            }
-
-            public string GetDescription(bool fullDescr = false)
-            {
-                return !fullDescr
-                    ? $"{Id}\t{Name}\t{Code}\t{Market}"
-                    : $"{Id}\t{Name}\t{Code}\t{Market}\t{Decp}\t{Child}\t{Url}";
-            }
-
-            public static string GetDescriptionHead(bool fullDescr = false)
-            {
-                return !fullDescr
-                    ? "Id\tName\tCode\tMarket"
-                    : "Id\tName\tCode\tMarket\tDecp\tChild\tUrl";
-            }
-        }
-
-        /// <summary>
         /// разбор файла www.finam.ru/cache/icharts/icharts.js
         /// </summary>
         private class Icharts

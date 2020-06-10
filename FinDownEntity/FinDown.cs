@@ -273,5 +273,77 @@ namespace FinDownEntity {
         public static DateTime GetTms(string sDate, DateFormat df, string sTime, TimeFormat tf) {
             return ParseDate(sDate, df) + ParseTime(sTime, tf);
         }
+
+
+        /// <summary>
+        /// Формируем url, понимаемый финамом, для передачи его загрузчику
+        /// </summary>
+        /// <param name="dtF">Начальная дата</param>
+        /// <param name="dtT">Конечная дата</param>
+        /// <param name="rezultFn">Имя сформированного файла</param>
+        /// <param name="code">issuer.Name</param>
+        /// <param name="market">issuer.Market</param>
+        /// <param name="id">issuer.Id</param>
+        /// <param name="tf">Таймфрейм</param>
+        /// <param name="datf">Формат записи в файл. По умолчанию: DataFormat.CandleOptimal</param>
+        /// <param name="dtf">формат даты. По умолчанию: DateFormat.DD_MM_YY</param>
+        /// <param name="tmf">формат времени. По умолчанию: TimeFormat.HH_MM_SS</param>
+        /// <param name="ct">Время свечи (0 - open; 1 - close). По умолчанию: CandleTime.Open</param>
+        /// <param name="fs">Разделитель полей. По умолчанию: FieldSeparator.Tab</param>
+        /// <param name="bs">Разделитель разрядов. По умолчанию: BitSeparator.None</param>
+        /// <param name="at">Нужны ли заголовки столбцов (0 - нет, 1 - да). По умолчанию: ColumnHeaderNeed.Yes</param>
+        /// <returns></returns>
+        private static string GetUrl(DateTime dtF, DateTime dtT, string rezultFn,
+            string code, string market, string id,
+            ETimeFrame tf,
+            DataFormat datf = DataFormat.CandleOptimal,
+            DateFormat dtf = DateFormat.DD_MM_YY,
+            TimeFormat tmf = TimeFormat.HH_MM_SS,
+            CandleTime ct = CandleTime.Open,
+            FieldSeparator fs = FieldSeparator.Tab,
+            BitSeparator bs = BitSeparator.None,
+            ColumnHeaderNeed at = ColumnHeaderNeed.Yes)
+        {
+            // для запроса тиковых данных требуем формат данных TickOptimal
+            Assert.IsTrue(tf == ETimeFrame.Tick && datf == DataFormat.TickOptimal ||
+                          tf != ETimeFrame.Tick && datf != DataFormat.TickOptimal);
+
+
+            // генерируем url
+            var url = "http://export.finam.ru/" +
+                      $"{rezultFn}.txt?" +
+                      $"market={market}&" +
+                      $"em={id}&" +
+                      $"code={code}&" +
+                      $"apply=0&" + // ?
+
+                      $"df={dtF.Day}&" +
+                      $"mf={dtF.Month - 1}&" + // номер месяца (0-11)
+                      $"yf={dtF.Year}&" +
+                      $"from={dtF:dd.MM.yyyy}&" + // Начальная дата в формате "ДД.ММ.ГГГГ" (здесь месяцы от 1 до 12)
+
+                      $"dt={dtT.Day}&" +
+                      $"mt={dtT.Month - 1}&" + // номер месяца (0-11)
+                      $"yt={dtT.Year}&" +
+                      $"to={dtT:dd.MM.yyyy}&" + // Конечная дата в формате "ДД.ММ.ГГГГ" (здесь месяцы от 1 до 12)
+
+                      $"p={(int)tf}&" +
+                      $"f={rezultFn}&" +
+                      $"e=.txt&" + // Расширение сформированного файла: ".txt" или ".csv"
+                      $"cn={code}&" +
+
+                      $"dtf={(int)dtf}&" +
+                      $"tmf={(int)tmf}&" +
+                      $"MSOR={(int)ct}&" +
+
+                      $"mstime=on&" + // Московское время	( "on", "off")
+                      $"mstimever=1&" + // Коррекция часового пояса
+                      $"sep={(int)fs}&" +
+                      $"sep2={(int)bs}&" +
+                      $"datf={(int)datf}&" +
+                      $"at={(int)at}";
+
+            return url;
+        }
     }
 }

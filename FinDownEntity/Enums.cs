@@ -2,6 +2,62 @@
 
 namespace FinDownEntity {
     /// <summary>
+    /// Таймфрейм (Tick, M1, M5, M10, M15, M30, H1, Day, Week, Month)
+    /// </summary>
+    public enum ETimeFrame
+    {
+        /// <summary>
+        /// Тики
+        /// </summary>
+        Tick = 1,
+
+        /// <summary>
+        /// 1 Минутный
+        /// </summary>
+        M1 = 2,
+
+        /// <summary>
+        /// 5 минутный
+        /// </summary>
+        M5 = 3,
+
+        /// <summary>
+        /// 10 минутный
+        /// </summary>
+        M10 = 4,
+
+        /// <summary>
+        /// 15 минутный
+        /// </summary>
+        M15 = 5,
+
+        /// <summary>
+        /// 30 минутный
+        /// </summary>
+        M30 = 6,
+
+        /// <summary>
+        /// Часовой
+        /// </summary>
+        H1 = 7,
+
+        /// <summary>
+        /// Дневной
+        /// </summary>
+        Day = 8,
+
+        /// <summary>
+        /// Недельный
+        /// </summary>
+        Week = 9,
+
+        /// <summary>
+        /// Месяц
+        /// </summary>
+        Month = 10
+    }
+
+    /// <summary>
     /// Разделитель полей (Comma, Dot, Semicolon, Tab, Space)
     /// </summary>
     public enum FieldSeparator {

@@ -293,7 +293,7 @@ namespace FinDownEntity {
         /// <param name="bs">Разделитель разрядов. По умолчанию: BitSeparator.None</param>
         /// <param name="at">Нужны ли заголовки столбцов (0 - нет, 1 - да). По умолчанию: ColumnHeaderNeed.Yes</param>
         /// <returns></returns>
-        private static string GetUrl(DateTime dtF, DateTime dtT, string rezultFn,
+        public static string GetUrl(DateTime dtF, DateTime dtT, string rezultFn,
             string code, string market, string id,
             ETimeFrame tf,
             DataFormat datf = DataFormat.CandleOptimal,

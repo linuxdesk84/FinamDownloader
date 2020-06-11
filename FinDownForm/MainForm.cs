@@ -10,7 +10,15 @@ using System.Windows.Forms;
 
 namespace FinDownForm
 {
-    public partial class MainForm : Form
+    interface IMainForm {
+        string IChartsPath { get; }
+        string HistDataDir { get; }
+
+        event EventHandler IChartsUpdateClick;
+        event Action<string, string, bool> FormClosing;
+
+    }
+    public partial class MainForm : Form, IMainForm
     {
         public MainForm()
         {
@@ -53,6 +61,61 @@ namespace FinDownForm
             }
 
             
+        }
+
+        private void butSettings_Click(object sender, EventArgs e)
+        {
+            var FormSettings = new FormSettings();
+        }
+
+
+        // FormSettings
+
+        private void Settings_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            // save settings to ini file
+        }
+
+        private void butIChartsUpdate_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        #region IFormSettings
+
+        public string IChartsPath {
+            get { return fldIChartsPath.Text; }
+        }
+
+        public string HistDataDir {
+            get { return fldHistDataDir.Text; }
+        }
+
+        public event EventHandler IChartsUpdateClick;
+        public event Action<string, string, bool> FormClosing;
+
+        #endregion
+
+
+        private void butChooseICharts_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog dlg = new OpenFileDialog();
+            dlg.Filter = @"icharts|icharts.js";
+
+            if (dlg.ShowDialog() == DialogResult.OK)
+            {
+                fldIChartsPath.Text = dlg.FileName;
+            }
+        }
+
+        private void butHistDataDirChoose_Click(object sender, EventArgs e)
+        {
+            var dlg = new FolderBrowserDialog();
+
+            if (dlg.ShowDialog() == DialogResult.OK)
+            {
+                fldHistDataDir.Text = dlg.SelectedPath;
+            }
         }
     }
 }

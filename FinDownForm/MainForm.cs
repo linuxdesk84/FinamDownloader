@@ -1,121 +1,172 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace FinDownForm
-{
-    interface IMainForm {
-        string IChartsPath { get; }
-        string HistDataDir { get; }
-
-        event EventHandler IChartsUpdateClick;
-        event Action<string, string, bool> FormClosing;
-
-    }
-    public partial class MainForm : Form, IMainForm
-    {
-        public MainForm()
-        {
+namespace FinDownForm {
+    public partial class MainForm : Form, IMainForm {
+        public MainForm() {
             InitializeComponent();
-        }
 
-        private void MainForm_Load(object sender, EventArgs e)
-        {
-            chAllTime.Checked = true;
-            chSkipUnfinished.Enabled = false;
-        }
+            butSearch.Click += ButSearch_Click;
+            butDownload.Click += ButDownload_Click;
+            butIChartsUpdate.Click += ButIChartsUpdate_Click;
+            butSaveSettings.Click += ButSaveSettings_Click;
 
-        private void chOverWrite_CheckedChanged(object sender, EventArgs e)
-        {
+            butChooseICharts.Click += ButChooseICharts_Click;
+            butHistDataDirChoose.Click += ButHistDataDirChoose_Click;
+            chAllTime.CheckedChanged += ChAllTime_CheckedChanged;
+            chFutures.CheckedChanged += ChFutures_CheckedChanged;
 
-        }
-
-        private void chSkipUnfinished_CheckedChanged(object sender, EventArgs e)
-        {
+            SetInitialValues();
 
         }
 
-        private void chAllTime_CheckedChanged(object sender, EventArgs e) {
-            if (chAllTime.Checked) {
-                dtpPeriodBeg.Value = new DateTime(1970, 1, 1);
-                dtpPeriodEnd.Value = DateTime.Now;
+        #region Собственный код формы
+
+        private void SetInitialValues() {
+            chFutures.Checked = true;
+            chFutures.Checked = false;
+        }
+
+        private void ButChooseICharts_Click(object sender, EventArgs e) {
+            OpenFileDialog dlg = new OpenFileDialog();
+            dlg.Filter = @"icharts|icharts.js";
+
+            if (dlg.ShowDialog() == DialogResult.OK) {
+                fldIChartsPath.Text = dlg.FileName;
             }
+        }
+
+        private void ButHistDataDirChoose_Click(object sender, EventArgs e) {
+            var dlg = new FolderBrowserDialog();
+
+            if (dlg.ShowDialog() == DialogResult.OK) {
+                fldHistDataDir.Text = dlg.SelectedPath;
+            }
+        }
+
+        private void ChAllTime_CheckedChanged(object sender, EventArgs e) {
+            if (chAllTime.Checked) {
+                DtPeriodFrom = DtPeriodMin;
+                DtPeriodTo = DtPeriodMax;
+            }
+
             dtpPeriodBeg.Enabled = !chAllTime.Checked;
             dtpPeriodEnd.Enabled = !chAllTime.Checked;
         }
 
-        private void chFutures_CheckedChanged(object sender, EventArgs e) {
+        private void ChFutures_CheckedChanged(object sender, EventArgs e) {
             chSkipUnfinished.Enabled = chFutures.Checked;
             fldIssuerMarket.Enabled = !chFutures.Checked;
             fldIssuerId.Enabled = !chFutures.Checked;
 
             if (chFutures.Checked) {
-                fldIssuerMarket.Text= "";
-                fldIssuerId.Text= "";
+                fldIssuerMarket.Text = "";
+                fldIssuerId.Text = "";
             }
-
-            
         }
-
-        private void butSettings_Click(object sender, EventArgs e)
-        {
-            var FormSettings = new FormSettings();
-        }
-
-
-        // FormSettings
-
-        private void Settings_FormClosing(object sender, FormClosingEventArgs e)
-        {
-            // save settings to ini file
-        }
-
-        private void butIChartsUpdate_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        #region IFormSettings
-
-        public string IChartsPath {
-            get { return fldIChartsPath.Text; }
-        }
-
-        public string HistDataDir {
-            get { return fldHistDataDir.Text; }
-        }
-
-        public event EventHandler IChartsUpdateClick;
-        public event Action<string, string, bool> FormClosing;
 
         #endregion
 
+        #region Проброс событий
 
-        private void butChooseICharts_Click(object sender, EventArgs e)
-        {
-            OpenFileDialog dlg = new OpenFileDialog();
-            dlg.Filter = @"icharts|icharts.js";
-
-            if (dlg.ShowDialog() == DialogResult.OK)
-            {
-                fldIChartsPath.Text = dlg.FileName;
-            }
+        private void ButSearch_Click(object sender, EventArgs e) {
+            SearchIssuerClick?.Invoke(sender, EventArgs.Empty);
         }
 
-        private void butHistDataDirChoose_Click(object sender, EventArgs e)
-        {
-            var dlg = new FolderBrowserDialog();
-
-            if (dlg.ShowDialog() == DialogResult.OK)
-            {
-                fldHistDataDir.Text = dlg.SelectedPath;
-            }
+        private void ButDownload_Click(object sender, EventArgs e) {
+            DownloadIssuerClick?.Invoke(sender, EventArgs.Empty);
         }
+
+        private void ButIChartsUpdate_Click(object sender, EventArgs e) {
+            UpdateIChartsClick?.Invoke(sender, EventArgs.Empty);
+        }
+
+        private void ButSaveSettings_Click(object sender, EventArgs e) {
+            SaveSettingsClick?.Invoke(sender, EventArgs.Empty);
+        }
+
+        #endregion
+
+        #region IMainForm
+
+        // tab main
+        public string IssuerName => fldIssuerName.Text;
+
+        public string IssuerMarket => fldIssuerMarket.Text;
+
+        public string IssuerId => fldIssuerId.Text;
+
+        public bool fEqualName => chEqualName.Checked;
+
+        public bool fAllTime => chAllTime.Checked;
+
+        public bool IsFutures => chFutures.Checked;
+
+        public bool fSkipUnfinished => chSkipUnfinished.Checked;
+
+        public bool fOverwrite => chOverwrite.Checked;
+
+        public DateTime DtPeriodMin { private get; set; }
+
+        public DateTime DtPeriodMax { private get; set; }
+
+        private DateTime GetValueFromMinAndMax(DateTime dt) {
+            if (dt < DtPeriodMin) {
+                dt = DtPeriodMin;
+            }
+
+            if (DtPeriodMax < dt) {
+                dt = DtPeriodMax;
+            }
+
+            return dt;
+        }
+
+        public DateTime DtPeriodFrom {
+            get => dtpPeriodBeg.Value;
+            private set => dtpPeriodBeg.Value = GetValueFromMinAndMax(value);
+        }
+
+        public DateTime DtPeriodTo {
+            get => dtpPeriodEnd.Value;
+            private set => dtpPeriodEnd.Value = GetValueFromMinAndMax(value);
+        }
+
+        public void Logging(string str) {
+            fldLog.Text += str;
+        }
+
+        public void ClearLog() {
+            fldLog.Text = string.Empty;
+        }
+
+        public void SetIssuerCount(int count) {
+            lblIssuersCount.Text = count.ToString();
+        }
+
+        public void SetDownloadedCount(int count) {
+            lblDownloadedCount.Text = count.ToString();
+        }
+
+        public event EventHandler SearchIssuerClick;
+        public event EventHandler DownloadIssuerClick;
+
+        // tab settings
+        public string IChartsPath {
+            get => fldIChartsPath.Text;
+            set => fldIChartsPath.Text = value;
+        }
+
+        public string HistDataDir {
+            get => fldHistDataDir.Text;
+            set => fldHistDataDir.Text = value;
+        }
+
+        public bool fAutoUpdate => chIChartsAutoUpdate.Checked;
+
+        public event EventHandler UpdateIChartsClick;
+        public event EventHandler SaveSettingsClick;
+
+        #endregion
     }
 }

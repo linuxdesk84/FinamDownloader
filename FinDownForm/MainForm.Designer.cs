@@ -35,7 +35,6 @@
             this.lblDownloadedCount = new System.Windows.Forms.ToolStripStatusLabel();
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.tabPage1 = new System.Windows.Forms.TabPage();
-            this.tabPage2 = new System.Windows.Forms.TabPage();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.label3 = new System.Windows.Forms.Label();
             this.fldIssuerId = new System.Windows.Forms.TextBox();
@@ -54,6 +53,7 @@
             this.chOverwrite = new System.Windows.Forms.CheckBox();
             this.chEqualName = new System.Windows.Forms.CheckBox();
             this.fldLog = new System.Windows.Forms.TextBox();
+            this.tabPage2 = new System.Windows.Forms.TabPage();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
             this.butHistDataDirChoose = new System.Windows.Forms.Button();
             this.fldHistDataDir = new System.Windows.Forms.TextBox();
@@ -64,12 +64,13 @@
             this.butChooseICharts = new System.Windows.Forms.Button();
             this.fldIChartsPath = new System.Windows.Forms.TextBox();
             this.label5 = new System.Windows.Forms.Label();
+            this.butSaveSettings = new System.Windows.Forms.Button();
             this.statusStrip1.SuspendLayout();
             this.tabControl1.SuspendLayout();
             this.tabPage1.SuspendLayout();
-            this.tabPage2.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox1.SuspendLayout();
+            this.tabPage2.SuspendLayout();
             this.groupBox3.SuspendLayout();
             this.groupBox4.SuspendLayout();
             this.SuspendLayout();
@@ -143,18 +144,6 @@
             this.tabPage1.TabIndex = 0;
             this.tabPage1.Text = "main";
             this.tabPage1.UseVisualStyleBackColor = true;
-            // 
-            // tabPage2
-            // 
-            this.tabPage2.Controls.Add(this.groupBox3);
-            this.tabPage2.Controls.Add(this.groupBox4);
-            this.tabPage2.Location = new System.Drawing.Point(4, 22);
-            this.tabPage2.Name = "tabPage2";
-            this.tabPage2.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage2.Size = new System.Drawing.Size(432, 414);
-            this.tabPage2.TabIndex = 1;
-            this.tabPage2.Text = "settings";
-            this.tabPage2.UseVisualStyleBackColor = true;
             // 
             // groupBox2
             // 
@@ -340,6 +329,19 @@
             this.fldLog.Size = new System.Drawing.Size(411, 211);
             this.fldLog.TabIndex = 11;
             // 
+            // tabPage2
+            // 
+            this.tabPage2.Controls.Add(this.butSaveSettings);
+            this.tabPage2.Controls.Add(this.groupBox3);
+            this.tabPage2.Controls.Add(this.groupBox4);
+            this.tabPage2.Location = new System.Drawing.Point(4, 22);
+            this.tabPage2.Name = "tabPage2";
+            this.tabPage2.Padding = new System.Windows.Forms.Padding(3);
+            this.tabPage2.Size = new System.Drawing.Size(432, 414);
+            this.tabPage2.TabIndex = 1;
+            this.tabPage2.Text = "settings";
+            this.tabPage2.UseVisualStyleBackColor = true;
+            // 
             // groupBox3
             // 
             this.groupBox3.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
@@ -448,6 +450,17 @@
             this.label5.TabIndex = 0;
             this.label5.Text = "path";
             // 
+            // butSaveSettings
+            // 
+            this.butSaveSettings.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.butSaveSettings.Location = new System.Drawing.Point(345, 141);
+            this.butSaveSettings.Name = "butSaveSettings";
+            this.butSaveSettings.Size = new System.Drawing.Size(75, 23);
+            this.butSaveSettings.TabIndex = 12;
+            this.butSaveSettings.Text = "Save";
+            this.butSaveSettings.UseVisualStyleBackColor = true;
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -458,17 +471,16 @@
             this.MinimumSize = new System.Drawing.Size(480, 520);
             this.Name = "MainForm";
             this.Text = "FinamDownloader";
-            this.Load += new System.EventHandler(this.MainForm_Load);
             this.statusStrip1.ResumeLayout(false);
             this.statusStrip1.PerformLayout();
             this.tabControl1.ResumeLayout(false);
             this.tabPage1.ResumeLayout(false);
             this.tabPage1.PerformLayout();
-            this.tabPage2.ResumeLayout(false);
             this.groupBox2.ResumeLayout(false);
             this.groupBox2.PerformLayout();
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
+            this.tabPage2.ResumeLayout(false);
             this.groupBox3.ResumeLayout(false);
             this.groupBox3.PerformLayout();
             this.groupBox4.ResumeLayout(false);
@@ -515,6 +527,7 @@
         private System.Windows.Forms.Button butChooseICharts;
         private System.Windows.Forms.TextBox fldIChartsPath;
         private System.Windows.Forms.Label label5;
+        private System.Windows.Forms.Button butSaveSettings;
     }
 }
 

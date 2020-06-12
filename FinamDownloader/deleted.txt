@@ -1,0 +1,341 @@
+﻿// 2020.06.11
+
+
+private static void Main()
+        {
+            string ffnIcharts = NewMethod();
+
+            while (true)
+            {
+                PrintMenu();
+                var sel = Console.ReadLine();
+
+                if (sel == "0")
+                {
+                    return;
+                }
+
+                if (sel == "9")
+                {
+                    DownloadIchartsAndMark(ffnIcharts, true);
+                    continue;
+                }
+
+                if (sel != "1" && sel != "2" && sel != "3" && sel != "4" && sel != "5" && sel != "6")
+                {
+                    Console.WriteLine(@"Not correct select");
+                    continue;
+                }
+
+                var icharts = new Icharts(ffnIcharts);
+                var issuers = icharts.Issuers;
+
+                switch (sel)
+                {
+                    case "1":
+                        FindIssuers(issuers);
+                        break;
+
+                    case "2":
+                        FindIssuers(issuers, true);
+                        break;
+
+                    case "3":
+                        DownloadFutures(issuers);
+                        break;
+
+                    case "4":
+                        DownloadFutures(issuers, true, true);
+                        break;
+
+                    case "5":
+                        DownloadShare(issuers);
+                        break;
+
+                    case "6":
+                        DownloadShare(issuers, true, true);
+                        break;
+                }
+            }
+        }
+
+
+        private static void PrintMenu()
+        {
+            Console.WriteLine("");
+            Console.WriteLine("1 - поиск инструмента (содержит подстроку)");
+            Console.WriteLine("2 - поиск инструмента (равно строке)");
+            Console.WriteLine(string.Empty);
+
+            Console.WriteLine("3 - загрузка / обновление фьючерса без перезаписи (базовое имя)");
+            Console.WriteLine("4 - загрузка фьючерса за период с перезаписью (базовое имя)");
+            Console.WriteLine(string.Empty);
+
+            Console.WriteLine("5 - загрузка / обновление акций без перезаписи");
+            Console.WriteLine("6 - загрузка акций за период с перезаписью");
+            Console.WriteLine(string.Empty);
+
+            Console.WriteLine("9 - загрузка icharts.js");
+            Console.WriteLine("0 - выход");
+        }
+	
+	
+	
+	
+	// 2020.06.10
+
+
+	/// <summary>
+    /// Попытка найти не нулевые акции из shares с кодом shareName
+    /// Вырезано из DownloadShares()
+    /// </summary>
+    /// <param name="issuers"></param>
+    private void TryToFindNoEmptyIssuers(List<FinamIssuer> issuers)
+    {
+        var shareName = "SBER";
+        var shares = issuers.FindAll(iss => iss.Name == shareName);
+
+
+        var dtBeg = new DateTime(1979, 1, 1);
+        var dtEnd = DateTime.Now.AddHours(-2);
+        var shareDirD1 = "";
+        var urlsWriter = new StreamWriter("");
+        var shareDir = "";
+
+
+        // 
+        // запросим дневные свечи за период [dtBeg; dtEnd] для каждого shares[i]
+        var nonEmptyShares = new List<int>();
+        var nonEmptyFns = new List<string>();
+
+
+        for (var i = 0; i < shares.Count; i++)
+        {
+            var issuer = shares[i];
+
+            //имя результирующего файла для дневных свечей. имя передается без расширения
+            var fnD1 = $"{shareName}_{dtBeg:yyMMdd}_{dtEnd:yyMMdd}";
+            var fnD1Txt = fnD1 + ".txt";
+
+
+
+            var ffnD1 = shareDirD1 + fnD1Txt;
+
+
+            var url = GetUrl(dtBeg, dtEnd, fnD1, shareName, issuer.Market, issuer.Id, ETimeFrame.Day,
+                DataFormat.CandleOptimal);
+            urlsWriter.WriteLine(url);
+
+            while (!TryDownload(url, ffnD1))
+            { }
+
+
+            // ищем не пустые файлы
+            var length = new FileInfo(ffnD1).Length;
+            if (length > 0)
+            {
+                nonEmptyShares.Add(i);
+                nonEmptyFns.Add(fnD1Txt);
+            }
+            else
+            {
+                File.Delete(ffnD1);
+            }
+        }
+
+
+
+        if (nonEmptyShares.Count == 0)
+        {
+            Console.WriteLine($"Для всех issuer получены пустые файлы с датами");
+            return;
+        }
+
+        foreach (var idx in nonEmptyShares)
+        {
+            var issuer = shares[idx];
+            var fn = nonEmptyFns[idx];
+
+            if (nonEmptyShares.Count == 1)
+            {
+
+                var fnNew = $"{shareName}_{dtBeg:yyMMdd}_{dtEnd:yyMMdd}";
+                File.Move(shareDir + fn, shareDir + fnNew);
+                fn = fnNew;
+            }
+
+            DownloadTicksFromD1File(urlsWriter, shareDir, fn,
+                shareName, issuer.Market, issuer.Id, false, false);
+        }
+    }
+
+
+
+
+
+    // запрашиваем дату и базовое имя фьючерса из консоли. для консольного приложения
+    if (fNeedPeriod)
+    {
+        Console.Write("Enter dtPeriodBeg as 'year, month' (for example: '2017, 11'): ");
+        var bufDt1 = Console.ReadLine()?.Split(',');
+        Assert.IsTrue(bufDt1 != null && bufDt1.Length == 2);
+        var y1 = Convert.ToInt32(bufDt1[0]);
+        var m1 = Convert.ToInt32(bufDt1[1]);
+        dtPeriodBeg = new DateTime(y1, m1, 1);
+
+        Console.Write("Enter dtPeriodEnd as 'year, month' (for example: '2018, 12'): ");
+        var bufDt2 = Console.ReadLine()?.Split(',');
+        Assert.IsTrue(bufDt2 != null && bufDt2.Length == 2);
+        var y2 = Convert.ToInt32(bufDt2[0]);
+        var m2 = Convert.ToInt32(bufDt2[1]);
+        dtPeriodEnd = new DateTime(y2, m2, 1);
+    }
+
+    Console.Write(@"Enter future Base name (for example: BR, MX, MM, SR, etc.): ");
+    var futBaseName = Console.ReadLine();
+
+
+
+	// запрос имени, рынка и id акции из консоли. для консольного приложения
+	Console.Write(@"Enter 'Name,Market,Id': ");
+    var shareName = Console.ReadLine();
+    Assert.IsFalse(string.IsNullOrWhiteSpace(shareName));
+
+
+    var market = "-1";
+    var id = "-1";
+
+    if (shareName.Contains(','))
+    {
+        var buf = shareName.Split(',');
+        Assert.IsTrue(buf.Length == 3);
+
+        shareName = buf[0];
+        market = buf[1];
+        id = buf[2];
+
+        // Нельзя требовать, чтобы такой инструмент был в issuers в единственном экземпляре. это не работает!
+        // с сайта финам уже давно загружается SBER,market=1,id=3, но в обновляемых icharts.js такого SBER нет
+        // var tmpIssuers = issuers.FindAll(iss => iss.Name == shareName && iss.Id == id && iss.Market == market);
+        // Assert.IsTrue(tmpIssuers != null && tmpIssuers.Count == 1);
+    }
+
+
+
+
+	/// <summary>
+    /// запрос дат из консоли. для консольного приложения
+    /// </summary>
+    /// <param name="fNeedPeriod"></param>
+    /// <param name="dtFrom"></param>
+    /// <param name="dtTo"></param>
+    private static void GetPeriod(bool fNeedPeriod, out DateTime dtFrom, out DateTime dtTo)
+    {
+        var dtFinamMin = new DateTime(1979, 1, 1);
+        var dtNow = DateTime.Now.AddHours(-2);
+
+        dtFrom = dtFinamMin;
+        dtTo = dtNow;
+
+        if (fNeedPeriod)
+        {
+            Console.Write("Enter dtFrom as 'dd/MM/yyyy': ");
+            var bufDt1 = Console.ReadLine();
+            if (bufDt1 != "")
+            {
+                Assert.IsFalse(string.IsNullOrWhiteSpace(bufDt1));
+                var dt1 = DateTime.Parse(bufDt1, CultureInfo.CurrentCulture);
+
+                Assert.IsTrue(dtFinamMin < dt1 && dt1 <= dtNow);
+                dtFrom = dt1;
+            }
+
+
+            Console.Write("Enter dtTo as 'dd/MM/yyyy': ");
+            var bufDt2 = Console.ReadLine();
+            if (bufDt2 != "")
+            {
+                Assert.IsFalse(string.IsNullOrWhiteSpace(bufDt2));
+                var dt2 = DateTime.Parse(bufDt2, CultureInfo.CurrentCulture);
+
+                Assert.IsTrue(dtFrom <= dt2 && dt2 <= dtNow);
+                dtTo = dt2;
+            }
+        }
+    }
+
+
+
+	// попытка найти нужную акцию с нечеткими условиями выбора
+	if (market == "-1" && id == "-1")
+    {
+        // акций с одним и тем же именем может быть несколько (например, SBER)
+        // в таком случае выбираем ту у которой url содержит @"moex-classica/"
+        var shares = issuers.FindAll(s => s.Name == shareName);
+        if (shares.Count == 0)
+        {
+            Console.WriteLine("Акции с таким кодом не найдены");
+            return;
+        }
+
+        if (shares.Count > 1)
+        {
+            const string moexClassica = @"moex-classica/";
+            var shares2 = shares.FindAll(s => s.Url.Contains(moexClassica));
+
+            if (shares2.Count == 1)
+            {
+                market = shares[0].Market;
+                id = shares[0].Id;
+            }
+            else
+            {
+                // если выбор по moexClassica не удался, то выбираем вручную
+                Console.WriteLine($"найдено акций с таким кодом: {shares.Count}");
+                for (var i = 0; i < shares.Count; i++)
+                {
+                    var issuer = shares[i];
+                    Console.WriteLine($"{i}\t{issuer.GetDescription()}");
+                }
+
+                Console.WriteLine($@"Введите порядковый номер акции которую скачать, либо иное - для выхода: ");
+                var fTry = int.TryParse(Console.ReadLine(), out var num);
+                if (fTry && 0 <= num && num < shares.Count)
+                {
+                    market = shares[num].Market;
+                    id = shares[num].Id;
+                }
+                else
+                {
+                    Console.WriteLine($"порядковый номер акции не найден");
+                    return;
+                }
+            }
+        }
+    }
+    Assert.IsTrue(market != "-1" || id != "-1");
+
+
+            
+	// попытка восстановить последнюю загруженную дату по имени файла D1
+	var filesD1 = Directory.GetFiles(shareDirD1);
+    foreach (var fD1 in filesD1)
+    {
+        var fn = Path.GetFileNameWithoutExtension(fD1); // SBER_790101_191101
+        var strDtTo = fn.Split('_')[2];
+
+        var y = Convert.ToInt32(strDtTo.Substring(0, 2));
+        y += y > 70 ? 1900 : 2000;
+
+        var m = Convert.ToInt32(strDtTo.Substring(2, 2));
+        var d = Convert.ToInt32(strDtTo.Substring(4, 2));
+
+        var dt = new DateTime(y, m, d);
+        Assert.IsTrue(dtFinamMin < dt && dt <= dtNow);
+
+        if (dtFrom < dt)
+        {
+            dtFrom = dt;
+        }
+    }
+

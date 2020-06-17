@@ -16,7 +16,12 @@ namespace FinDownForm
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new MainForm());
+
+            var form = new MainForm();
+            var service = new MessageService();
+
+            var presenter = new Presenter(form, service);
+            Application.Run(form);
         }
     }
 }

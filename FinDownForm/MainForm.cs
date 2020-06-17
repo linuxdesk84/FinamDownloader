@@ -6,8 +6,12 @@ namespace FinDownForm {
         public MainForm() {
             InitializeComponent();
 
+            dtpPeriodFrom.ValueChanged += DtpPeriodFrom_ValueChanged;
+            dtpPeriodTo.ValueChanged += DtpPeriodTo_ValueChanged;
+
             butSearch.Click += ButSearch_Click;
             butDownload.Click += ButDownload_Click;
+            butCancel.Click += ButCancel_Click;
             butIChartsUpdate.Click += ButIChartsUpdate_Click;
             butSaveSettings.Click += ButSaveSettings_Click;
 
@@ -17,10 +21,23 @@ namespace FinDownForm {
             chFutures.CheckedChanged += ChFutures_CheckedChanged;
 
             SetInitialValues();
+            this.FormClosing += MainForm_FormClosing;
+        }
 
+
+        private void DtpPeriodTo_ValueChanged(object sender, EventArgs e) {
+            DtPeriodTo = dtpPeriodTo.Value;
+        }
+
+        private void DtpPeriodFrom_ValueChanged(object sender, EventArgs e) {
+            DtPeriodFrom = dtpPeriodFrom.Value;
         }
 
         #region Собственный код формы
+
+        private void ClearLog() {
+            fldLog.Text = string.Empty;
+        }
 
         private void SetInitialValues() {
             chFutures.Checked = true;
@@ -28,8 +45,7 @@ namespace FinDownForm {
         }
 
         private void ButChooseICharts_Click(object sender, EventArgs e) {
-            OpenFileDialog dlg = new OpenFileDialog();
-            dlg.Filter = @"icharts|icharts.js";
+            var dlg = new OpenFileDialog {Filter = @"icharts|icharts.js"};
 
             if (dlg.ShowDialog() == DialogResult.OK) {
                 fldIChartsPath.Text = dlg.FileName;
@@ -40,7 +56,7 @@ namespace FinDownForm {
             var dlg = new FolderBrowserDialog();
 
             if (dlg.ShowDialog() == DialogResult.OK) {
-                fldHistDataDir.Text = dlg.SelectedPath;
+                fldHistDataDir.Text = dlg.SelectedPath + @"\";
             }
         }
 
@@ -50,18 +66,16 @@ namespace FinDownForm {
                 DtPeriodTo = DtPeriodMax;
             }
 
-            dtpPeriodBeg.Enabled = !chAllTime.Checked;
-            dtpPeriodEnd.Enabled = !chAllTime.Checked;
+            dtpPeriodFrom.Enabled = !chAllTime.Checked;
+            dtpPeriodTo.Enabled = !chAllTime.Checked;
         }
 
         private void ChFutures_CheckedChanged(object sender, EventArgs e) {
             chSkipUnfinished.Enabled = chFutures.Checked;
-            fldIssuerMarket.Enabled = !chFutures.Checked;
-            fldIssuerId.Enabled = !chFutures.Checked;
+            chExactMatchName.Enabled = !chFutures.Checked;
 
             if (chFutures.Checked) {
-                fldIssuerMarket.Text = "";
-                fldIssuerId.Text = "";
+                chExactMatchName.Checked = false;
             }
         }
 
@@ -70,12 +84,20 @@ namespace FinDownForm {
         #region Проброс событий
 
         private void ButSearch_Click(object sender, EventArgs e) {
+            ClearLog();
             SearchIssuerClick?.Invoke(sender, EventArgs.Empty);
         }
 
         private void ButDownload_Click(object sender, EventArgs e) {
+            ClearLog();
+            FlipButtons(false);
             DownloadIssuerClick?.Invoke(sender, EventArgs.Empty);
         }
+        private void ButCancel_Click(object sender, EventArgs e)
+        {
+            DownloadCancelClick?.Invoke(sender, EventArgs.Empty);
+        }
+
 
         private void ButIChartsUpdate_Click(object sender, EventArgs e) {
             UpdateIChartsClick?.Invoke(sender, EventArgs.Empty);
@@ -90,13 +112,17 @@ namespace FinDownForm {
         #region IMainForm
 
         // tab main
+        public event EventHandler FormClosing;
+
         public string IssuerName => fldIssuerName.Text;
 
         public string IssuerMarket => fldIssuerMarket.Text;
 
         public string IssuerId => fldIssuerId.Text;
 
-        public bool fEqualName => chEqualName.Checked;
+        public bool FExactMatchName => chExactMatchName.Checked;
+
+        public bool FMatchCase => chMatchCase.Checked;
 
         public bool fAllTime => chAllTime.Checked;
 
@@ -123,21 +149,20 @@ namespace FinDownForm {
         }
 
         public DateTime DtPeriodFrom {
-            get => dtpPeriodBeg.Value;
-            private set => dtpPeriodBeg.Value = GetValueFromMinAndMax(value);
+            get => dtpPeriodFrom.Value;
+            set => dtpPeriodFrom.Value = GetValueFromMinAndMax(value);
         }
 
         public DateTime DtPeriodTo {
-            get => dtpPeriodEnd.Value;
-            private set => dtpPeriodEnd.Value = GetValueFromMinAndMax(value);
+            get => dtpPeriodTo.Value;
+            set => dtpPeriodTo.Value = GetValueFromMinAndMax(value);
         }
 
         public void Logging(string str) {
-            fldLog.Text += str;
-        }
-
-        public void ClearLog() {
-            fldLog.Text = string.Empty;
+            Action action = () => {
+                fldLog.AppendText(str + Environment.NewLine);
+            };
+            this.InvokeEx(action);
         }
 
         public void SetIssuerCount(int count) {
@@ -145,14 +170,29 @@ namespace FinDownForm {
         }
 
         public void SetDownloadedCount(int count) {
-            lblDownloadedCount.Text = count.ToString();
+            Action action = () => {
+                lblDownloadedCount.Text = count.ToString();
+            };
+            this.InvokeEx(action);
         }
+
+        public void FlipButtons(bool fEnable)
+        {
+            Action action = () =>
+            {
+                butDownload.Enabled = fEnable;
+                butSearch.Enabled = fEnable;
+            };
+            this.InvokeEx(action);
+        }
+
 
         public event EventHandler SearchIssuerClick;
         public event EventHandler DownloadIssuerClick;
+        public event EventHandler DownloadCancelClick;
 
         // tab settings
-        public string IChartsPath {
+        public string IchartsPath {
             get => fldIChartsPath.Text;
             set => fldIChartsPath.Text = value;
         }
@@ -162,11 +202,19 @@ namespace FinDownForm {
             set => fldHistDataDir.Text = value;
         }
 
-        public bool fAutoUpdate => chIChartsAutoUpdate.Checked;
+        public bool FAutoUpdate {
+            get => chIChartsAutoUpdate.Checked;
+            set => chIChartsAutoUpdate.Checked = value;
+        }
 
         public event EventHandler UpdateIChartsClick;
         public event EventHandler SaveSettingsClick;
 
         #endregion
+
+        private void MainForm_FormClosing(object sender, EventArgs e)
+        {
+            FormClosing?.Invoke(sender, EventArgs.Empty);
+        }
     }
 }

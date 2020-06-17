@@ -6,8 +6,14 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinDownEntity", "FinDownEntity\FinDownEntity.csproj", "{3F7D9DD9-F37A-4266-8D95-45C590D7B6C2}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinamDownloader", "FinamDownloader\FinamDownloader.csproj", "{D4E85AFF-D848-4A01-AE41-419A74927F97}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3F7D9DD9-F37A-4266-8D95-45C590D7B6C2} = {3F7D9DD9-F37A-4266-8D95-45C590D7B6C2}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinDownForm", "FinDownForm\FinDownForm.csproj", "{9E16AD39-5828-4F5A-B3D3-E3993BD962C9}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3F7D9DD9-F37A-4266-8D95-45C590D7B6C2} = {3F7D9DD9-F37A-4266-8D95-45C590D7B6C2}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

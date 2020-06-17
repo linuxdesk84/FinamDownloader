@@ -35,6 +35,7 @@
             this.lblDownloadedCount = new System.Windows.Forms.ToolStripStatusLabel();
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.tabPage1 = new System.Windows.Forms.TabPage();
+            this.chMatchCase = new System.Windows.Forms.CheckBox();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.label3 = new System.Windows.Forms.Label();
             this.fldIssuerId = new System.Windows.Forms.TextBox();
@@ -43,17 +44,18 @@
             this.label1 = new System.Windows.Forms.Label();
             this.fldIssuerName = new System.Windows.Forms.TextBox();
             this.butSearch = new System.Windows.Forms.Button();
+            this.chFutures = new System.Windows.Forms.CheckBox();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.chAllTime = new System.Windows.Forms.CheckBox();
-            this.dtpPeriodBeg = new System.Windows.Forms.DateTimePicker();
-            this.dtpPeriodEnd = new System.Windows.Forms.DateTimePicker();
-            this.chFutures = new System.Windows.Forms.CheckBox();
+            this.dtpPeriodFrom = new System.Windows.Forms.DateTimePicker();
+            this.dtpPeriodTo = new System.Windows.Forms.DateTimePicker();
             this.butDownload = new System.Windows.Forms.Button();
             this.chSkipUnfinished = new System.Windows.Forms.CheckBox();
             this.chOverwrite = new System.Windows.Forms.CheckBox();
-            this.chEqualName = new System.Windows.Forms.CheckBox();
+            this.chExactMatchName = new System.Windows.Forms.CheckBox();
             this.fldLog = new System.Windows.Forms.TextBox();
             this.tabPage2 = new System.Windows.Forms.TabPage();
+            this.butSaveSettings = new System.Windows.Forms.Button();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
             this.butHistDataDirChoose = new System.Windows.Forms.Button();
             this.fldHistDataDir = new System.Windows.Forms.TextBox();
@@ -64,7 +66,7 @@
             this.butChooseICharts = new System.Windows.Forms.Button();
             this.fldIChartsPath = new System.Windows.Forms.TextBox();
             this.label5 = new System.Windows.Forms.Label();
-            this.butSaveSettings = new System.Windows.Forms.Button();
+            this.butCancel = new System.Windows.Forms.Button();
             this.statusStrip1.SuspendLayout();
             this.tabControl1.SuspendLayout();
             this.tabPage1.SuspendLayout();
@@ -132,10 +134,12 @@
             // 
             // tabPage1
             // 
+            this.tabPage1.Controls.Add(this.chMatchCase);
             this.tabPage1.Controls.Add(this.groupBox2);
             this.tabPage1.Controls.Add(this.butSearch);
+            this.tabPage1.Controls.Add(this.chFutures);
             this.tabPage1.Controls.Add(this.groupBox1);
-            this.tabPage1.Controls.Add(this.chEqualName);
+            this.tabPage1.Controls.Add(this.chExactMatchName);
             this.tabPage1.Controls.Add(this.fldLog);
             this.tabPage1.Location = new System.Drawing.Point(4, 22);
             this.tabPage1.Name = "tabPage1";
@@ -144,6 +148,16 @@
             this.tabPage1.TabIndex = 0;
             this.tabPage1.Text = "main";
             this.tabPage1.UseVisualStyleBackColor = true;
+            // 
+            // chMatchCase
+            // 
+            this.chMatchCase.AutoSize = true;
+            this.chMatchCase.Location = new System.Drawing.Point(162, 51);
+            this.chMatchCase.Name = "chMatchCase";
+            this.chMatchCase.Size = new System.Drawing.Size(81, 17);
+            this.chMatchCase.TabIndex = 16;
+            this.chMatchCase.Text = "match case";
+            this.chMatchCase.UseVisualStyleBackColor = true;
             // 
             // groupBox2
             // 
@@ -211,7 +225,6 @@
             // 
             // butSearch
             // 
-            this.butSearch.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.butSearch.Location = new System.Drawing.Point(339, 77);
             this.butSearch.Name = "butSearch";
             this.butSearch.Size = new System.Drawing.Size(75, 23);
@@ -219,14 +232,22 @@
             this.butSearch.Text = "Search";
             this.butSearch.UseVisualStyleBackColor = true;
             // 
+            // chFutures
+            // 
+            this.chFutures.AutoSize = true;
+            this.chFutures.Location = new System.Drawing.Point(162, 76);
+            this.chFutures.Name = "chFutures";
+            this.chFutures.Size = new System.Drawing.Size(58, 17);
+            this.chFutures.TabIndex = 8;
+            this.chFutures.Text = "futures";
+            this.chFutures.UseVisualStyleBackColor = true;
+            // 
             // groupBox1
             // 
-            this.groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
+            this.groupBox1.Controls.Add(this.butCancel);
             this.groupBox1.Controls.Add(this.chAllTime);
-            this.groupBox1.Controls.Add(this.dtpPeriodBeg);
-            this.groupBox1.Controls.Add(this.dtpPeriodEnd);
-            this.groupBox1.Controls.Add(this.chFutures);
+            this.groupBox1.Controls.Add(this.dtpPeriodFrom);
+            this.groupBox1.Controls.Add(this.dtpPeriodTo);
             this.groupBox1.Controls.Add(this.butDownload);
             this.groupBox1.Controls.Add(this.chSkipUnfinished);
             this.groupBox1.Controls.Add(this.chOverwrite);
@@ -247,35 +268,22 @@
             this.chAllTime.Text = "all time";
             this.chAllTime.UseVisualStyleBackColor = true;
             // 
-            // dtpPeriodBeg
+            // dtpPeriodFrom
             // 
-            this.dtpPeriodBeg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.dtpPeriodBeg.Location = new System.Drawing.Point(152, 20);
-            this.dtpPeriodBeg.Name = "dtpPeriodBeg";
-            this.dtpPeriodBeg.Size = new System.Drawing.Size(123, 20);
-            this.dtpPeriodBeg.TabIndex = 10;
+            this.dtpPeriodFrom.Location = new System.Drawing.Point(152, 20);
+            this.dtpPeriodFrom.Name = "dtpPeriodFrom";
+            this.dtpPeriodFrom.Size = new System.Drawing.Size(123, 20);
+            this.dtpPeriodFrom.TabIndex = 10;
             // 
-            // dtpPeriodEnd
+            // dtpPeriodTo
             // 
-            this.dtpPeriodEnd.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.dtpPeriodEnd.Location = new System.Drawing.Point(281, 20);
-            this.dtpPeriodEnd.Name = "dtpPeriodEnd";
-            this.dtpPeriodEnd.Size = new System.Drawing.Size(123, 20);
-            this.dtpPeriodEnd.TabIndex = 9;
-            // 
-            // chFutures
-            // 
-            this.chFutures.AutoSize = true;
-            this.chFutures.Location = new System.Drawing.Point(11, 52);
-            this.chFutures.Name = "chFutures";
-            this.chFutures.Size = new System.Drawing.Size(58, 17);
-            this.chFutures.TabIndex = 8;
-            this.chFutures.Text = "futures";
-            this.chFutures.UseVisualStyleBackColor = true;
+            this.dtpPeriodTo.Location = new System.Drawing.Point(281, 20);
+            this.dtpPeriodTo.Name = "dtpPeriodTo";
+            this.dtpPeriodTo.Size = new System.Drawing.Size(123, 20);
+            this.dtpPeriodTo.TabIndex = 9;
             // 
             // butDownload
             // 
-            this.butDownload.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.butDownload.Location = new System.Drawing.Point(329, 48);
             this.butDownload.Name = "butDownload";
             this.butDownload.Size = new System.Drawing.Size(75, 23);
@@ -286,7 +294,7 @@
             // chSkipUnfinished
             // 
             this.chSkipUnfinished.AutoSize = true;
-            this.chSkipUnfinished.Location = new System.Drawing.Point(70, 52);
+            this.chSkipUnfinished.Location = new System.Drawing.Point(152, 52);
             this.chSkipUnfinished.Name = "chSkipUnfinished";
             this.chSkipUnfinished.Size = new System.Drawing.Size(96, 17);
             this.chSkipUnfinished.TabIndex = 3;
@@ -295,25 +303,23 @@
             // 
             // chOverwrite
             // 
-            this.chOverwrite.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.chOverwrite.AutoSize = true;
-            this.chOverwrite.Location = new System.Drawing.Point(254, 52);
+            this.chOverwrite.Location = new System.Drawing.Point(10, 52);
             this.chOverwrite.Name = "chOverwrite";
             this.chOverwrite.Size = new System.Drawing.Size(69, 17);
             this.chOverwrite.TabIndex = 2;
             this.chOverwrite.Text = "overwrite";
             this.chOverwrite.UseVisualStyleBackColor = true;
             // 
-            // chEqualName
+            // chExactMatchName
             // 
-            this.chEqualName.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.chEqualName.AutoSize = true;
-            this.chEqualName.Location = new System.Drawing.Point(252, 81);
-            this.chEqualName.Name = "chEqualName";
-            this.chEqualName.Size = new System.Drawing.Size(81, 17);
-            this.chEqualName.TabIndex = 12;
-            this.chEqualName.Text = "equal name";
-            this.chEqualName.UseVisualStyleBackColor = true;
+            this.chExactMatchName.AutoSize = true;
+            this.chExactMatchName.Location = new System.Drawing.Point(162, 25);
+            this.chExactMatchName.Name = "chExactMatchName";
+            this.chExactMatchName.Size = new System.Drawing.Size(113, 17);
+            this.chExactMatchName.TabIndex = 12;
+            this.chExactMatchName.Text = "exact match name";
+            this.chExactMatchName.UseVisualStyleBackColor = true;
             // 
             // fldLog
             // 
@@ -341,6 +347,16 @@
             this.tabPage2.TabIndex = 1;
             this.tabPage2.Text = "settings";
             this.tabPage2.UseVisualStyleBackColor = true;
+            // 
+            // butSaveSettings
+            // 
+            this.butSaveSettings.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.butSaveSettings.Location = new System.Drawing.Point(345, 141);
+            this.butSaveSettings.Name = "butSaveSettings";
+            this.butSaveSettings.Size = new System.Drawing.Size(75, 23);
+            this.butSaveSettings.TabIndex = 12;
+            this.butSaveSettings.Text = "Save";
+            this.butSaveSettings.UseVisualStyleBackColor = true;
             // 
             // groupBox3
             // 
@@ -450,16 +466,14 @@
             this.label5.TabIndex = 0;
             this.label5.Text = "path";
             // 
-            // butSaveSettings
+            // butCancel
             // 
-            this.butSaveSettings.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.butSaveSettings.Location = new System.Drawing.Point(345, 141);
-            this.butSaveSettings.Name = "butSaveSettings";
-            this.butSaveSettings.Size = new System.Drawing.Size(75, 23);
-            this.butSaveSettings.TabIndex = 12;
-            this.butSaveSettings.Text = "Save";
-            this.butSaveSettings.UseVisualStyleBackColor = true;
+            this.butCancel.Location = new System.Drawing.Point(248, 48);
+            this.butCancel.Name = "butCancel";
+            this.butCancel.Size = new System.Drawing.Size(75, 23);
+            this.butCancel.TabIndex = 12;
+            this.butCancel.Text = "Cancel";
+            this.butCancel.UseVisualStyleBackColor = true;
             // 
             // MainForm
             // 
@@ -508,13 +522,13 @@
         private System.Windows.Forms.Button butSearch;
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.CheckBox chAllTime;
-        private System.Windows.Forms.DateTimePicker dtpPeriodBeg;
-        private System.Windows.Forms.DateTimePicker dtpPeriodEnd;
+        private System.Windows.Forms.DateTimePicker dtpPeriodFrom;
+        private System.Windows.Forms.DateTimePicker dtpPeriodTo;
         private System.Windows.Forms.CheckBox chFutures;
         private System.Windows.Forms.Button butDownload;
         private System.Windows.Forms.CheckBox chSkipUnfinished;
         private System.Windows.Forms.CheckBox chOverwrite;
-        private System.Windows.Forms.CheckBox chEqualName;
+        private System.Windows.Forms.CheckBox chExactMatchName;
         private System.Windows.Forms.TextBox fldLog;
         private System.Windows.Forms.TabPage tabPage2;
         private System.Windows.Forms.GroupBox groupBox3;
@@ -528,6 +542,8 @@
         private System.Windows.Forms.TextBox fldIChartsPath;
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.Button butSaveSettings;
+        private System.Windows.Forms.CheckBox chMatchCase;
+        private System.Windows.Forms.Button butCancel;
     }
 }
 

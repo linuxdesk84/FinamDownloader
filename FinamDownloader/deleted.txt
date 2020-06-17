@@ -1,4 +1,29 @@
-﻿// 2020.06.11
+﻿// 2020.06.15
+            Console.Write(@"enter name of issuer: ");
+            var name = Console.ReadLine();
+            Assert.IsFalse(string.IsNullOrWhiteSpace(name));
+
+            Console.WriteLine($@"issuersList.Count  = {issuersList.Count}"); // todo
+
+			// если найдено более 5 эмитентов, то спрашиваем надо ли печатать
+            if (issuersList.Count > max) {
+                string bCh;
+                do {
+                    Console.WriteLine(@"do you want to print all of issuersList names?"); // todo
+                    Console.WriteLine(@"1 - OK (min description), 2 - OK (full description), 0 - No"); // todo
+                    bCh = Console.ReadLine();
+                } while (bCh != "1" && bCh != "2" && bCh != "0");
+
+                if (bCh == "0")
+                    return;
+
+                // нужно ли полное описание?
+                fullDescr = bCh == "2";
+            }
+
+
+
+// 2020.06.11
 
 
 private static void Main()

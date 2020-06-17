@@ -8,22 +8,26 @@ using System.Net;
 
 
 namespace FinamDownloader {
+    interface IIchartsDownloader {
+        bool TryDownloadAndMark(out string message);
+        bool TryAutoUpdate(out string message);
+    }
 
 
     /// <summary>
     /// Класс, выполняющий работу по загрузке файла icharts.js
     /// </summary>
-    class IchartsDownloader {
+    public class IchartsDownloader : IIchartsDownloader {
         /// <summary>
         /// Путь до файла icharts.js
         /// </summary>
-        private readonly string _ichartsPath;
+        private string _ichartsPath;
 
         /// <summary>
         /// путь до файла check.txt, по которому определяется необходимость
         /// автоматического обновления файла icharts.js
         /// </summary>
-        private readonly string _fileCheckPath;
+        private string _fileCheckPath;
 
         /// <summary>
         /// корневой url сайта финама
@@ -43,14 +47,18 @@ namespace FinamDownloader {
             _downloadService = new DownloadService();
             _httpWebRequestService = new HttpWebRequestService();
 
-            _ichartsPath = "";
-            _fileCheckPath = "";
+            SetIchartsPath(ichartsPath);
 
+        }
+
+        public void SetIchartsPath(string ichartsPath) {
             if (File.Exists(ichartsPath)) {
                 _ichartsPath = ichartsPath;
                 _fileCheckPath = Directory.GetParent(_ichartsPath) + "\\check.txt";
+            } else {
+                _ichartsPath = string.Empty;
+                _fileCheckPath = string.Empty;
             }
-
         }
 
 
@@ -70,11 +78,11 @@ namespace FinamDownloader {
                 if (!str.Contains("icharts.js"))
                     continue;
 
-                // todo добавить пример строки
+                // пример строки: "\t\t<script src=\"/cache/N72Hgd54/icharts/icharts.js\" type=\"text/javascript\"></script>\r"
                 var buf = str.Split('"');
                 foreach (var subStr in buf) {
 
-                    // todo добавить пример строки
+                    // пример строки: "/cache/N72Hgd54/icharts/icharts.js"
                     if (subStr.Contains("icharts.js")) {
                         ichartsUrlOrError = FinamUrl + subStr;
                         return true;

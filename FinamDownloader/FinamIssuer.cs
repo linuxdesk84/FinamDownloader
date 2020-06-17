@@ -3,7 +3,7 @@
     /// <summary>
     /// Бумага
     /// </summary>
-    class FinamIssuer
+    public class FinamIssuer
     {
         /// <summary>
         /// id - не является уникльным полем

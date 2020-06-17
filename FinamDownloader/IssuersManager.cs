@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Net;
+using System.Text;
 using System.Threading;
 using FinDownEntity;
 using NUnit.Framework;
@@ -12,121 +13,290 @@ namespace FinamDownloader {
     /// <summary>
     /// Класс, выполняющий работу по загрузке и поиску эмитентов
     /// </summary>
-    class IssuersManager {
-        private List<FinamIssuer> issuers;
+    public class IssuersManager {
+        private bool _fCancelled;
+        private IchartsData _ichartsData;
 
-        private IchartsData _icharts;
-        //C:\Users\admin\Documents\main\programming\visualstudio\FinamDownloader\FinamDownloader\IchartsData.cs
-        DateTime dtPeriodMin;
-        DateTime dtPeriodMax;
-
-        private Settings _settings;
+        readonly DateTime _currentDt;
+        public DateTime DtPeriodMin { get; }
+        public DateTime DtPeriodMax { get; }
 
 
-        private IDownloadService _downloadService;
-
-        public IssuersManager(List<FinamIssuer> issuers) {
-            this.issuers = issuers;
-
-            // часовой пояс - мск
-            var currentDt = DateTime.Now.AddHours(-2);
-
-            var dtPeriodMin = new DateTime(1979, 1, 1); // todo дата с сайта финам???
-            var dtPeriodMax =
-                currentDt.AddDays(-1).Date; // за сегодняшнюю дату закачивать нельзя. самое позднее - за вчера
+        private readonly IDownloadService _downloadService;
 
 
+        private string _ichartsPath;
 
+        public string IchartsPath {
+            set {
+                var path = _ichartsPath;
+                _ichartsPath = value;
+                if (path != _ichartsPath) {
+                    _ichartsData.Load();
+                }
+
+
+            }
+        }
+
+        public void SetIchartsPath(string ichartsPath) {
+            _ichartsData.IchartsPath = ichartsPath;
         }
 
 
-        /* 
- * свалка:
- * List<FinamIssuer> issuers,
- * DateTime dtPeriodBeg, DateTime dtPeriodEnd,
- *
- * issuer.Name, issuer.Market, issuer.Id,
- * bool isFutures,
- * bool fOverwrite = false
- */
+        public int GetIssuersCount() {
+            return _ichartsData.Issuers.Count;
+        }
 
-        bool DownloadIssuers(string issuerName, string issuerMarket, string issuerId,
+        public string HistDataDir { get; set; }
+
+        public event Action<string> Inform;
+        public event Action FileDownloaded;
+        public event Action<bool> DownloadComplete;
+
+        public IssuersManager(string ichartsPath, string histDataDir) {
+            _ichartsData = new IchartsData(ichartsPath);
+            _ichartsData.Inform += _ichartssData_Inform;
+            HistDataDir = histDataDir;
+
+            // текущее московское время
+            _currentDt = DateTime.Now.AddHours(-2); // todo у Сани это работать будет не правильно
+
+            // самая ранняя дата, доступная в finam
+            DtPeriodMin = new DateTime(1979, 1, 1);
+
+            // за сегодняшнюю дату закачивать нельзя. самое позднее - за вчера
+            DtPeriodMax = _currentDt.AddDays(-1).Date;
+
+
+            _downloadService = new DownloadService();
+        }
+
+        private void _ichartssData_Inform(string message) {
+            Inform?.Invoke(message);
+        }
+
+
+        /// <summary>
+        /// поиск эмитента
+        /// </summary>
+        public string FindIssuers(string issuerName, string issuerMarket, string issuerId,
+            bool fExactMatchName, bool fMatchCase, bool isFutures)
+        {
+            if (_ichartsData.Issuers.Count == 0)
+            {
+                Inform?.Invoke($@"Не задан путь к файлу icharts.js");
+                return "";
+            }
+
+            var issuersList = SearchEngine(issuerName, issuerMarket, issuerId,
+                fExactMatchName, fMatchCase, isFutures);
+
+            var str = new StringBuilder();
+            str.AppendLine($@"Найдено эмитентов: {issuersList.Count}");
+
+
+            // если найдено не более max эмитентов, то печатаем их с полным описанием
+            const int max = 200;
+
+            if (0 < issuersList.Count && issuersList.Count < max)
+            {
+                const bool fFullDescr = true;
+                str.AppendLine(FinamIssuer.GetDescriptionHead(fFullDescr));
+                foreach (var issuer in issuersList)
+                {
+                    str.AppendLine(issuer.GetDescription(fFullDescr));
+                }
+            }
+
+            return str.ToString();
+        }
+
+        /// <summary>
+        /// Поисковый движок должен является общим для режимов поиска и скачивания,
+        /// чтобы обеспечить однозначность получаемых данных.
+        /// Что находится в режиме поиска, то и должно скачиваться.
+        /// </summary>
+        /// <returns></returns>
+        private List<FinamIssuer> SearchEngine(string issuerName, string issuerMarket, string issuerId,
+            bool fExactMatchName, bool fMatchCase, bool isFutures)
+        {
+            // для фьючерсов: требуем длину имени = 2
+            Assert.IsTrue(isFutures == false || issuerName.Length == 2);
+
+            // код должен быть длины 4, for example: BRU9, MXZ7, etc.
+            const int futCodeLen = 4;
+
+
+            // поиск можно уточнять при помощи Market и Id
+            var fMarket = !string.IsNullOrWhiteSpace(issuerMarket);
+            var fId = !string.IsNullOrWhiteSpace(issuerId);
+
+
+            if (fMatchCase == false) {
+                issuerName = issuerName.ToLower();
+            }
+
+
+            var issuersList = new List<FinamIssuer>();
+            foreach (var issuer in _ichartsData.Issuers) {
+                // отфильтровываем по Market и Id
+                if (fId && issuerId != issuer.Id ||
+                    fMarket && issuerMarket != issuer.Market) {
+                    continue;
+                }
+
+                var name = fMatchCase ? issuer.Name : issuer.Name.ToLower();
+
+                bool comparison;
+                if (isFutures) {
+                    var code = fMatchCase ? issuer.Code : issuer.Code.ToLower();
+
+                    // Name: "BR-1.09(BRF9)", Code: "BRF9"
+                    comparison = futCodeLen == issuer.Code.Length &&
+                                 code.Substring(0, issuerName.Length) == issuerName &&
+                                 name.Contains("-") && name.Contains(code) &&
+                                 name.Contains(".") && name.Contains("(") && name.Contains(")");
+                } else {
+                    comparison = fExactMatchName ? issuerName == name : name.Contains(issuerName);
+                }
+
+                if (comparison) {
+                    issuersList.Add(issuer);
+                }
+            }
+
+            return issuersList;
+        }
+
+
+        public void DowloadCancel() {
+            _fCancelled = true;
+        }
+
+        public void DownloadIssuers(object obj) {
+            _fCancelled = false;
+
+            var downloadParams = (DownloadParams) obj;
+
+            var issuerName      = downloadParams.IssuerName;
+            var issuerMarket    = downloadParams.IssuerMarket;
+            var issuerId        = downloadParams.IssuerId;
+
+            var fExactMatchName = downloadParams.FExactMatchName;
+            var fMatchCase      = downloadParams.FMatchCase;
+            var isFutures       = downloadParams.IsFutures;
+
+            var fAllTime        = downloadParams.FAllTime;
+            var dtPeriodBeg     = downloadParams.DtPeriodBeg;
+            var dtPeriodEnd     = downloadParams.DtPeriodEnd;
+
+            var fOverwrite      = downloadParams.FOverwrite;
+            var fSkipUnfinished = downloadParams.FSkipUnfinished;
+
+            DownloadIssuers( issuerName, issuerMarket, issuerId, fExactMatchName, fMatchCase, isFutures,
+             fAllTime, dtPeriodBeg, dtPeriodEnd, fOverwrite, fSkipUnfinished);
+
+            DownloadComplete?.Invoke(_fCancelled);
+        }
+
+
+        /// <summary>
+        /// Загрузка данных
+        /// </summary>
+        /// <param name="issuerName"></param>
+        /// <param name="issuerMarket"></param>
+        /// <param name="issuerId"></param>
+        /// <param name="fExactMatchName"></param>
+        /// <param name="fMatchCase"></param>
+        /// <param name="isFutures"></param>
+        /// <param name="fAllTime"></param>
+        /// <param name="dtPeriodBeg"></param>
+        /// <param name="dtPeriodEnd"></param>
+        /// <param name="fOverwrite">перезапись</param>
+        /// <param name="fSkipUnfinished">skip loading unfinished futures. Данный флаг иммеет отношение
+        /// только к фьючерсам, но не к конкретным дням. не завершенные дни мы не загружаем всегда</param>
+        public void DownloadIssuers(string issuerName, string issuerMarket, string issuerId,
+            bool fExactMatchName, bool fMatchCase, bool isFutures,
             bool fAllTime, DateTime dtPeriodBeg, DateTime dtPeriodEnd,
-            bool isFutures, bool fSkipUnfinished, bool fOverwrite) {
+            bool fOverwrite, bool fSkipUnfinished)
+        {
+            if (_ichartsData.Issuers.Count == 0) {
+                Inform?.Invoke($@"Не задан путь к файлу icharts.js");
+                return;
+            }
+
+            if (HistDataDir == string.Empty) {
+                Inform?.Invoke($@"Не задан путь к каталогу historyDataDir");
+                return;
+            }
 
             if (fAllTime) {
-                dtPeriodBeg = dtPeriodMin;
-                dtPeriodEnd = dtPeriodMax;
+                dtPeriodBeg = DtPeriodMin;
+                dtPeriodEnd = DtPeriodMax;
             }
 
-            if (dtPeriodBeg < dtPeriodMin) {
-                dtPeriodBeg = dtPeriodMin;
+            if (dtPeriodBeg < DtPeriodMin) {
+                dtPeriodBeg = DtPeriodMin;
             }
 
-            if (dtPeriodEnd > dtPeriodMax) {
-                dtPeriodEnd = dtPeriodMax;
+            if (dtPeriodEnd > DtPeriodMax) {
+                dtPeriodEnd = DtPeriodMax;
+            }
+
+            var issuersList = SearchEngine(issuerName, issuerMarket, issuerId,
+                fExactMatchName, fMatchCase, isFutures);
+
+            if (issuersList.Count == 0) {
+                Inform?.Invoke("Не найдено ни одного эмитента");
+                return;
             }
 
 
-            return true;
+
+            if (isFutures) {
+                DownloadFutures(issuerName, issuersList, true, 
+                    dtPeriodBeg, dtPeriodEnd, fOverwrite, fSkipUnfinished);
+            } else {
+                if (issuersList.Count != 1) {
+                    Inform?.Invoke("Найдено больше одного эмитента. Необходимо изменить условия поиска");
+                    return;
+                }
+
+                // Загрузка тиков по акции
+                var issuer = issuersList[0];
+                DownloadIssuer(issuer.Name, issuer.Market, issuer.Id,
+                    false, dtPeriodBeg, dtPeriodEnd, HistDataDir, fOverwrite);
+            }
         }
 
-        bool DownloadFutures(string issuerName, string issuerMarket, string issuerId,
-            bool fAllTime, DateTime dtPeriodBeg, DateTime dtPeriodEnd,
-            bool isFutures, bool fSkipUnfinished, bool fOverwrite) {
-            return true;
-        }
-
-        bool DownloadShare(string issuerName, string issuerMarket, string issuerId,
-            bool fAllTime, DateTime dtPeriodBeg, DateTime dtPeriodEnd,
-            bool isFutures, bool fSkipUnfinished, bool fOverwrite) {
-            return true;
-        }
-
-        bool DownloadD1AndLower(string baseDir, DateTime dtFrom, DateTime dtTo,
-            string issuerName, string issuerMarket, string issuerId,
-            bool fOverwrite, bool isFutures) {
-            return true;
-        }
 
 
         /// <summary>
         /// Загрузка тиков по фьючам
         /// </summary>
-        /// <param name="issuers"></param>
-        /// <param name="fNeedPeriod">запрашиваем период</param>
-        /// <param name="fOverwrite">перезапись</param>
-        /// <param name="fSkipUnfinished">skip loading unfinished futures. Данный флаг иммеет отношение
-        /// только к фьючерсам, но не к конкретным дням. не завершенные дни мы не загружаем всегда</param>
-        private void DownloadFutures(List<FinamIssuer> issuers, string futBaseName, bool fNeedPeriod = false,
-            bool fOverwrite = false, bool fSkipUnfinished = true)
+        private void DownloadFutures(string futBaseName, List<FinamIssuer> futList, bool isFutures,
+            DateTime dtPeriodBeg, DateTime dtPeriodEnd, bool fOverwrite, bool fSkipUnfinished)
         {
-            var dtPeriodBeg = new DateTime(1979, 1, 1); // самая ранняя дата, доступная в finam
-            var dtPeriodEnd = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1); // намеренно игнорируем номер дня
+            if (fSkipUnfinished) {
+                // намеренно игнорируем номер дня
+                var dt = new DateTime(DtPeriodMax.Year, DtPeriodMax.Month, 1);
 
-
-            Assert.IsTrue(futBaseName != null && futBaseName.Length == 2);
-
-            const int futCodeLen = 4; // for example: BRU9, MXZ7, etc.
-
-            var futList = issuers.FindAll(issuer =>
-                issuer.Name.Contains("-") && issuer.Name.Contains(".") && // "BR-1.09(BRF9)"
-                futCodeLen == issuer.Code.Length &&
-                issuer.Code.Substring(0, futBaseName.Length) == futBaseName); // "BRF9"
+                if (dt < dtPeriodEnd) {
+                    dtPeriodEnd = dt;
+                }
+            }
 
 
             futBaseName += '-'; // "BR" -> "BR-"
 
 
             // базовая директория фьючерса. 
-            var futBaseDir = _settings.HistDataDir + futBaseName + "\\";
+            var futBaseDir = HistDataDir + futBaseName + "\\";
             Directory.CreateDirectory(futBaseDir);
 
 
-            var curDt = DateTime.Now.AddHours(-2);
-
-            foreach (var fut in futList)
-            {
+            foreach (var fut in futList) {
                 /* приставка "SPFB.", которую автоматически формирует сайт финама при запросе,
                  не обязательна для корректного скачивания по сформированным urls */
                 var datePart = fut.Name.Split('(')[0]; // "BR-1.09(BRF9)" -> "BR-1.09"
@@ -144,183 +314,108 @@ namespace FinamDownloader {
                 var futDateTo = futExpDate.AddMonths(1); // Конечная дата: 1 число месяца, следующего после экспирации
 
 
-                // если фьючерс еще не завершен, то пропускаем загрузку
-                // До тех пор пока мы не скачиваем не завершенные фьючерсы - их не надо докачивать
-                if (fSkipUnfinished && curDt < futDateTo || futDateTo < dtPeriodBeg || dtPeriodEnd < futDateTo)
-                {
+                var futName = futBaseName + $"{expDateYear}.{expDateMonth:D2}"; // BR-2009.01
+
+                // пропускаем фьючерсы вне запрашиваемого диапазона
+                if (futDateTo < dtPeriodBeg || dtPeriodEnd < futDateFrom) {
+                    Inform?.Invoke($@"Фьючерс {futName} вне запрашиваемого диапазона");
                     continue;
                 }
 
-                var futName = futBaseName + $"{expDateYear}.{expDateMonth:D2}"; // BR-2009.01
+                // если fSkipUnfinished и фьючерс еще не завершен, то пропускаем загрузку
+                if (fSkipUnfinished && _currentDt < futDateTo) {
+                    Inform?.Invoke($@"Фьючерс {futName} еще не завершен. Пропускаем загрузку");
+                    continue;
+                }
 
 
+                // сообщаем, что будем закачивать фьючерс futName
+                Inform?.Invoke($@"Загружаем {futName}, диапазон: {futDateFrom} - {futDateTo}");
 
-                // сообщаем в консоль, что будем закачивать фьючерс futName
-                Console.WriteLine(futName); // todo
 
+                var fb = DownloadIssuer(futName, fut.Market, fut.Id,
+                    isFutures, futDateFrom, futDateTo, futBaseDir, fOverwrite);
 
-                var fb = DownloadIssuer(futBaseDir, futDateFrom, futDateTo,
-                    futName, fut.Market, fut.Id, fOverwrite, isFutures: true);
-
-                if (!fb)
-                {
+                if (_fCancelled) {
                     return;
+                }
+
+                if (!fb) {
+                    //return;
                 }
             }
         }
 
 
-        /// <summary>
-        /// поиск эмитента
-        /// </summary>
-        /// <param name="issuers">имя эмитента</param>
-        /// <param name="equalityRequired">требование полного совпадения строки поиска и имени эмитента</param>
-        private void FindIssuers(List<FinamIssuer> issuers, bool equalityRequired = false) {
-            Console.Write(@"enter name of issuer: "); // todo
-            var name = Console.ReadLine(); // todo
-            Assert.IsFalse(string.IsNullOrWhiteSpace(name));
 
-            var issuersList = issuers.FindAll(issuer =>
-                equalityRequired ? name == issuer.Name : issuer.Name.Contains(name));
-            Console.WriteLine($@"issuersList.Count  = {issuersList.Count}"); // todo
-
-            // если найдено не более 5 эмитентов, то молча печатаем с полным описанием
-            const int max = 5;
-            var fullDescr = true;
-
-            // если найдено более 5 эмитентов, то спрашиваем надо ли печатать
-            if (issuersList.Count > max) {
-                string bCh;
-                do {
-                    Console.WriteLine(@"do you want to print all of issuersList names?"); // todo
-                    Console.WriteLine(@"1 - OK (min description), 2 - OK (full description), 0 - No"); // todo
-                    bCh = Console.ReadLine();
-                } while (bCh != "1" && bCh != "2" && bCh != "0");
-
-                if (bCh == "0")
-                    return;
-
-                // нужно ли полное описание?
-                fullDescr = bCh == "2";
-            }
-
-            Console.WriteLine(FinamIssuer.GetDescriptionHead(fullDescr)); // todo
-            foreach (var issuer in issuersList) {
-                Console.WriteLine(issuer.GetDescription(fullDescr)); // todo
-            }
-        }
-
-        /// <summary>
-        /// Загрузка тиков по акциям
-        /// </summary>
-        /// <param name="issuers"></param>
-        /// <param name="fNeedPeriod">запрашиваем период</param>
-        /// <param name="fOverwrite">перезапись</param>
-        private bool DownloadShare(
-            List<FinamIssuer> issuers,
-            DateTime dtBeg,
-            DateTime dtEnd,
-            string shareName,
-            string shareMarket,
-            string shareId,
-            bool fOverwrite,
-            bool fEqualName) {
-            //GetPeriod(fNeedPeriod, out var dtBeg, out var dtEnd);
-
-
-
-
-
-            var shares = issuers.FindAll(s =>
-                (fEqualName && s.Name == shareName || s.Name.Contains(shareName)) &&
-                (shareMarket == "" || s.Market == shareMarket) &&
-                (shareId == "" || s.Id == shareId)
-            );
-
-
-            if (shares == null) {
-                //logging("не найдено ни одного эмитента");
-                //return false;
-
-            }
-
-            if (shares.Count > 1) {
-                //logging("Найдено больше одного эмитента. Уточните условия поиска");
-                //return false;
-
-            }
-
-
-
-
-
-
-            DownloadIssuer(_settings.HistDataDir, dtBeg, dtEnd,
-                shareName, shareMarket, shareId, fOverwrite, isFutures: false);
-
-            return true;
-        }
-
-        private bool DownloadIssuer(string baseDir, DateTime dtFrom, DateTime dtTo,
-            string issuerName, string issuerMarket, string issuerId,
-            bool fOverwrite, bool isFutures) {
+        private bool DownloadIssuer(string issuerName, string issuerMarket, string issuerId,
+            bool isFutures, DateTime dtFrom, DateTime dtTo, string baseDir, bool fOverwrite)
+        {
             // директория, куда будем сохранять загруженные данные
             var issuerDir = baseDir + issuerName + "\\";
             Directory.CreateDirectory(issuerDir);
 
-            // todo у Сани это работать будет не правильно
-            // берем московское время
-            var curDt = DateTime.Now.AddHours(-2);
-
+            
             var logDir = issuerDir + "logs\\";
             Directory.CreateDirectory(logDir);
 
             // в файл urlsLog будут записываться сформированные url
-            var urlsLog = logDir + $"urls_{curDt:yyyy.MM.dd_HH;mm;ss}.txt";
-            var urlsWriter = new StreamWriter(urlsLog, append: false) {AutoFlush = true};
+            var urlsLog = logDir + $"urls_{_currentDt:yyyy.MM.dd_HH;mm;ss}.txt";
+            using (var urlsWriter = new StreamWriter(urlsLog, append: false) {AutoFlush = true}) {
+                var fileD1Dir = issuerDir + "D1\\";
+                Directory.CreateDirectory(fileD1Dir);
 
-            var fileD1Dir = issuerDir + "D1\\";
-            Directory.CreateDirectory(fileD1Dir);
 
+                // имя результирующего файла для дневных свечей (д.б. без расширения)
+                var fileD1Name = $"{issuerName}_{dtFrom:yyMMdd}_{dtTo:yyMMdd}";
+                var fileD1Path = fileD1Dir + fileD1Name + ".txt";
 
-            // имя результирующего файла для дневных свечей (д.б. без расширения)
-            var fileD1Name = $"{issuerName}_{dtFrom:yyMMdd}_{dtTo:yyMMdd}";
-            var fileD1Path = fileD1Dir + fileD1Name + ".txt";
-
-            /* Для акций файл D1 можно заказывать всегда.
+                /* Для акций файл D1 можно заказывать всегда.
              * Для фьючерсов заказывать надо в случаях:
              * 1) включена перезапись
              * 2) файл D1 не существует
              * 3) его дата записи раньше даты экспирации, т.е. история запрашивалась до экспирации
              */
-            if (!isFutures || fOverwrite ||
-                !File.Exists(fileD1Path) || File.GetLastWriteTime(fileD1Path) < dtTo) {
+                if (isFutures && !fOverwrite && File.Exists(fileD1Path) &&
+                    File.GetLastWriteTime(fileD1Path) >= dtTo && new FileInfo(fileD1Path).Length > 0) {
+                    Inform?.Invoke($@"Фьючерс {issuerName} уже загружен");
+                    return true;
+                }
 
                 var url = FinDown.GetUrl(dtFrom, dtTo, fileD1Name,
-                    issuerName, issuerMarket, issuerId,
-                    ETimeFrame.Day, DataFormat.CandleOptimal);
+                    issuerName, issuerMarket, issuerId, ETimeFrame.Day);
                 urlsWriter.WriteLine(url);
 
-                while (!_downloadService.TryDownload(url, fileD1Path, out var strErr)) { }
-
+                while (!_downloadService.TryDownload(url, fileD1Path, out var strErr)) {
+                    Inform?.Invoke(strErr);
+                    if (_fCancelled) {
+                        return false;
+                    }
+                }
 
                 // если полученный файл пустой, то ошибка
                 var length = new FileInfo(fileD1Path).Length;
                 if (length == 0) {
-                    File.Delete(fileD1Path);
-                    Console.WriteLine("получен пустой файл с датами"); // todo
+                    //File.Delete(fileD1Path);
+                    Inform?.Invoke($@"Пропускаем загрузку: получен пустой файл с датами: {fileD1Path}");
                     return false;
                 }
+
+                Inform?.Invoke($@"Загружен файл {fileD1Path}.");
+
 
                 // читаем futD1Path, и скачиваем тики за каждую доступную дату
                 DownloadTicksFromD1File(urlsWriter, issuerDir, fileD1Path,
                     issuerName, issuerMarket, issuerId, fOverwrite, isFutures);
 
-                urlsWriter.Close();
+                if (_fCancelled) {
+                    return true;
+                }
             }
 
             return true;
         }
+
 
         /// <summary>
         /// загрузка тиков по датам из файла
@@ -334,18 +429,13 @@ namespace FinamDownloader {
         /// <param name="fOverwrite"></param>
         /// <param name="isFutures">Это акция? для фьючей тики не раскладываются по годам</param>
         private void DownloadTicksFromD1File(
-            TextWriter urlsWriter,
-            string saveDir,
-            string ffnD1,
-            string issuerName,
-            string issuerMarket,
-            string issuerId,
-            bool fOverwrite,
-            bool isFutures) {
+            TextWriter urlsWriter, string saveDir, string ffnD1,
+            string issuerName, string issuerMarket, string issuerId,
+            bool fOverwrite, bool isFutures)
+        {
             Assert.IsTrue(File.Exists(ffnD1));
-
-            // todo Date
-            var curDt = DateTime.Now.AddHours(-2); // корректировка на мск
+            var lastYear = 0;
+            var currentSaveDir = saveDir;
 
             // читаем файл со свечами D1, и скачиваем за каждую доступную дату тики
             using (var reader = new StreamReader(ffnD1)) {
@@ -353,6 +443,10 @@ namespace FinamDownloader {
                 reader.ReadLine();
 
                 while (!reader.EndOfStream) {
+                    if (_fCancelled) {
+                        return;
+                    }
+
                     var str = reader.ReadLine();
 
                     // пустая строка не предусмотрена
@@ -370,27 +464,29 @@ namespace FinamDownloader {
 
 
                     // скачиваем тиковые данные за только за завершенные периоды
-                    if (dtTick >= curDt) {
+                    if (dtTick > DtPeriodMax) {
                         continue; // or break;
                     }
 
 
                     // только для акций: все тиковые данные будем хранить по годам
-                    if (!isFutures) {
-                        saveDir += $"{dtTick:yyyy}\\";
-                        Directory.CreateDirectory(saveDir);
+                    if (!isFutures && lastYear != dtTick.Year) {
+                        lastYear = dtTick.Year;
+                        currentSaveDir = saveDir + $"{lastYear:d4}\\";
+                        Directory.CreateDirectory(currentSaveDir);
                     }
 
 
                     // имя результирующего файла для тиковых данных за конкретную дату
                     var rezultFnTick = $"{issuerName}_{dtTick:yyMMdd}_{dtTick:yyMMdd}";
+                    Inform?.Invoke(rezultFnTick);
 
                     var urlTick = FinDown.GetUrl(dtTick, dtTick, rezultFnTick, issuerName, issuerMarket, issuerId,
                         ETimeFrame.Tick, DataFormat.TickOptimal);
                     urlsWriter.WriteLine(urlTick);
 
-                    var ffnTick = saveDir + rezultFnTick + ".txt";
-                    var ffnTick7Z = saveDir + rezultFnTick + ".7z";
+                    var ffnTick = currentSaveDir + rezultFnTick + ".txt";
+                    var ffnTick7Z = currentSaveDir + rezultFnTick + ".7z";
 
                     var isExistsTick = File.Exists(ffnTick);
                     var isExistsTick7Z = File.Exists(ffnTick7Z);
@@ -398,29 +494,37 @@ namespace FinamDownloader {
                     // если перезапись включена, то удаляем существующие файлы
                     if (fOverwrite) {
                         if (isExistsTick) {
+                            Inform?.Invoke($@"Удаляем файл {ffnTick}");
                             File.Delete(ffnTick);
                             isExistsTick = false;
                         }
 
                         if (isExistsTick7Z) {
+                            Inform?.Invoke($@"Удаляем файл {ffnTick7Z}");
                             File.Delete(ffnTick7Z);
                             isExistsTick7Z = false;
                         }
                     }
 
 
-                    if (fOverwrite || (!isExistsTick && !isExistsTick7Z)) {
-                        while (!_downloadService.TryDownload(urlTick, ffnTick, out var strErr)) { }
-
-                        Console.WriteLine(rezultFnTick); // todo
+                    if (!fOverwrite && (isExistsTick || isExistsTick7Z)) {
+                        Inform?.Invoke($@"Пропускаем загрузку: Файл(ы) {ffnTick} и/или {ffnTick7Z} уже скачен(ы)");
+                        continue;
                     }
+
+                    while (!_downloadService.TryDownload(urlTick, ffnTick, out var strErr)) {
+                        Inform?.Invoke(strErr);
+                        if (_fCancelled) {
+                            return;
+                        }
+                    }
+
+                    Inform?.Invoke(rezultFnTick + " - downloaded");
+                    FileDownloaded?.Invoke();
                 }
 
-                Console.WriteLine(string.Empty); // todo
+                Inform?.Invoke(string.Empty);
             }
         }
-
-
     }
-
 }

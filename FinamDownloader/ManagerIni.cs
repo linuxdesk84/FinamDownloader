@@ -6,19 +6,25 @@ using IniParser.Model;
 
 namespace FinamDownloader
 {
-    class ManagerIni {
+    public class ManagerIni {
         private readonly string _fileIniPath;
         public Settings FdSettings { get; }
 
         public event Action SettingsLoaded;
+        public event Action<string> Inform;
 
-        public ManagerIni(string appDir) {
+        public ManagerIni(string fileIniPath) {
             FdSettings = new Settings();
+            FdSettings.Inform += FdSettings_Inform;
 
-            _fileIniPath = appDir + "FinamDowloader.ini";
+            _fileIniPath = fileIniPath;
             if (File.Exists(_fileIniPath)) {
                 LoadSettings();
             }
+        }
+
+        private void FdSettings_Inform(string message) {
+            Inform?.Invoke(message);
         }
 
         private void LoadSettings() {
@@ -30,37 +36,54 @@ namespace FinamDownloader
 
             var histDataDir = parsedData["general"]["histDataDir"];
             var ichartsPath = parsedData["general"]["ichartsPath"];
-            var fAutoUpdate = parsedData["general"]["fAutoUpdate"];
+            var sAutoUpdate = parsedData["general"]["fAutoUpdate"];
 
-            var parseResult = bool.TryParse(fAutoUpdate, out var fAuto);
+            var parseResult = bool.TryParse(sAutoUpdate, out var fAutoUpdate);
             if (!parseResult) {
-                fAuto = true;
+                fAutoUpdate = true;
             }
 
-            SetSettings(histDataDir, ichartsPath, fAuto);
+            SetSettings(histDataDir, ichartsPath, fAutoUpdate);
 
             SettingsLoaded?.Invoke();
         }
 
-        private void SaveSettings() {
+        /// <summary>
+        /// сохраняем настройки в файл
+        /// </summary>
+        public void SaveSettings(string histDataDir, string ichartsPath, bool fAutoUpdate) {
+            SetSettings(histDataDir, ichartsPath, fAutoUpdate);
+
             var fileIniData = new FileIniDataParser();
-            var parsedData = fileIniData.ReadFile(_fileIniPath, Encoding.Default);
 
-            parsedData["general"]["histDataDir"] = FdSettings.HistDataDir;
-            parsedData["general"]["ichartsPath"] = FdSettings.IchartsPath;
-            parsedData["general"]["fAutoUpdate"] = FdSettings.FAutoUpdate.ToString();
+            const string sectionName = "general";
+            IniData settingsIniData = new IniData();
+            settingsIniData.Sections.AddSection(sectionName);
+            settingsIniData.Sections.GetSectionData(sectionName)
+                .Comments.Add("Основные настройки");
 
-            fileIniData.WriteFile(_fileIniPath, parsedData);
+            settingsIniData.Sections.GetSectionData(sectionName).Keys.AddKey("histDataDir", FdSettings.HistDataDir);
+            settingsIniData.Sections.GetSectionData(sectionName).Keys.GetKeyData("histDataDir")
+                .Comments.Add("каталог сохранения скачиваемых файлов");
+
+            settingsIniData.Sections.GetSectionData(sectionName).Keys.AddKey("ichartsPath", FdSettings.IchartsPath);
+            settingsIniData.Sections.GetSectionData(sectionName).Keys.GetKeyData("ichartsPath")
+                .Comments.Add("путь до файла 'icharts.js'");
+
+            settingsIniData.Sections.GetSectionData(sectionName).Keys.AddKey("fAutoUpdate", FdSettings.FAutoUpdate.ToString());
+            settingsIniData.Sections.GetSectionData(sectionName).Keys.GetKeyData("fAutoUpdate")
+                .Comments.Add("флаг автоматического обновления 'icharts.js'. периодичность - 24ч.");
+
+            fileIniData.WriteFile(_fileIniPath, settingsIniData);
         }
 
+        /// <summary>
+        /// применяем настройки
+        /// </summary>
         public void SetSettings(string histDataDir, string ichartsPath, bool fAutoUpdate) {
-            // применяем настройки
             FdSettings.HistDataDir = histDataDir;
             FdSettings.IchartsPath = ichartsPath;
             FdSettings.FAutoUpdate = fAutoUpdate;
-
-            // сохраняем настройки в файл
-            SaveSettings();
         }
 
     }

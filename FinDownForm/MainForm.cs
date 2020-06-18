@@ -191,6 +191,7 @@ namespace FinDownForm {
             {
                 butDownload.Enabled = fEnable;
                 butSearch.Enabled = fEnable;
+                tabPage2.Enabled = fEnable;
             };
             this.InvokeEx(action);
         }

@@ -2,7 +2,7 @@
 
 namespace FinDownForm {
     interface IMainForm {
-        event EventHandler FormClosing;
+        event EventHandler FormClosingClick;
 
         #region tabMain
 

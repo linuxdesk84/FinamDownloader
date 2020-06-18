@@ -20,7 +20,7 @@ namespace FinDownForm
             _fFormNotClosed = true;
 
             _mainForm = mainForm;
-            _mainForm.FormClosing += _mainForm_FormClosing;
+            _mainForm.FormClosingClick += _mainForm_FormClosing;
             _mainForm.SaveSettings += _mainForm_SaveSettings;
             _mainForm.UpdateIChartsClick += _mainForm_UpdateIChartsClick;
             _mainForm.SearchIssuerClick += _mainForm_SearchIssuerClick;

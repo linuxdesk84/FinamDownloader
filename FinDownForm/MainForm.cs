@@ -113,7 +113,7 @@ namespace FinDownForm {
 
         private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
         {
-            FormClosing?.Invoke(sender, EventArgs.Empty);
+            FormClosingClick?.Invoke(sender, EventArgs.Empty);
         }
 
 
@@ -122,7 +122,7 @@ namespace FinDownForm {
         #region IMainForm
 
         // tab main
-        public event EventHandler FormClosing;
+        public event EventHandler FormClosingClick;
 
         public string IssuerName => fldIssuerName.Text;
 

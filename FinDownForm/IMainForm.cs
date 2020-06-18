@@ -53,7 +53,7 @@ namespace FinDownForm {
         bool FAutoUpdate { get; set; }
 
         event EventHandler UpdateIChartsClick;
-        event EventHandler SaveSettingsClick;
+        event Action SaveSettings;
 
         #endregion
     }

@@ -19,7 +19,7 @@ namespace FinDownForm
 
             _mainForm = mainForm;
             _mainForm.FormClosing += _mainForm_FormClosing;
-            _mainForm.SaveSettingsClick += _mainForm_SaveSettingsClick;
+            _mainForm.SaveSettings += _mainForm_SaveSettings;
             _mainForm.UpdateIChartsClick += _mainForm_UpdateIChartsClick;
             _mainForm.SearchIssuerClick += _mainForm_SearchIssuerClick;
             _mainForm.DownloadIssuerClick += _mainForm_DownloadIssuerClick;
@@ -139,29 +139,37 @@ namespace FinDownForm
         {
             _issuersManager.DowloadCancel();
         }
-        private void _mainForm_SaveSettingsClick(object sender, EventArgs e) {
+        private void _mainForm_SaveSettings() {
             var ichartsPath = _mainForm.IchartsPath;
             var histDataDir = _mainForm.HistDataDir;
             var fAutoUpdate = _mainForm.FAutoUpdate;
 
-            if (!File.Exists(ichartsPath)) {
-                _messageService.ShowError($@"File {ichartsPath} isn't exists");
+            if (ichartsPath == _managerIni.FdSettings.IchartsPath &&
+                histDataDir == _managerIni.FdSettings.HistDataDir &&
+                fAutoUpdate == _managerIni.FdSettings.FAutoUpdate) {
                 return;
             }
 
-            if (!Directory.Exists(histDataDir)) {
-                _messageService.ShowError($@"Directory {histDataDir} isn't exists");
+
+            if (ichartsPath != string.Empty && !File.Exists(ichartsPath)) {
+                _messageService.ShowError($@"File '{ichartsPath}' isn't exists");
                 return;
             }
 
-            _ichartsDownloader.SetIchartsPath(ichartsPath);
+            if (histDataDir != string.Empty && !Directory.Exists(histDataDir)) {
+                _messageService.ShowError($@"Directory '{histDataDir}' isn't exists");
+                return;
+            }
 
-            _managerIni.SaveSettings(histDataDir, ichartsPath, fAutoUpdate);
 
-            _issuersManager.SetIchartsPath(ichartsPath);
+            if (ichartsPath != _managerIni.FdSettings.IchartsPath) {
+                _ichartsDownloader.SetIchartsPath(ichartsPath);
+                _issuersManager.SetIchartsPath(ichartsPath);
+                _mainForm.SetIssuerCount(_issuersManager.GetIssuersCount());
+            }
             _issuersManager.HistDataDir = histDataDir;
 
-            _mainForm.SetIssuerCount(_issuersManager.GetIssuersCount());
+            _managerIni.SaveSettings(histDataDir, ichartsPath, fAutoUpdate);
         }
 
 

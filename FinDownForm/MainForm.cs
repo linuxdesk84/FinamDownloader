@@ -21,10 +21,19 @@ namespace FinDownForm {
             chFutures.CheckedChanged += ChFutures_CheckedChanged;
 
             SetInitialValues();
-            this.FormClosing += MainForm_FormClosing;
+            FormClosing += MainForm_FormClosing;
+
+            tabControl1.Deselected += TabControl1_Deselected;
         }
 
+        private void TabControl1_Deselected(object sender, TabControlEventArgs e)
+        {
+            if (e.TabPage == tabPage2) {
+                SaveSettings?.Invoke();
+            }
+        }
 
+        
         private void DtpPeriodTo_ValueChanged(object sender, EventArgs e) {
             DtPeriodTo = dtpPeriodTo.Value;
         }
@@ -104,7 +113,7 @@ namespace FinDownForm {
         }
 
         private void ButSaveSettings_Click(object sender, EventArgs e) {
-            SaveSettingsClick?.Invoke(sender, EventArgs.Empty);
+            SaveSettings?.Invoke();
         }
 
         #endregion
@@ -208,7 +217,7 @@ namespace FinDownForm {
         }
 
         public event EventHandler UpdateIChartsClick;
-        public event EventHandler SaveSettingsClick;
+        public event Action SaveSettings;
 
         #endregion
 

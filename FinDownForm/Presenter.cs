@@ -13,9 +13,11 @@ namespace FinDownForm
         private readonly IchartsDownloader _ichartsDownloader;
 
         private int _downloadedCount;
+        private bool _fFormNotClosed;
 
         public Presenter(IMainForm mainForm, MessageService messageService) {
             _downloadedCount = 0;
+            _fFormNotClosed = true;
 
             _mainForm = mainForm;
             _mainForm.FormClosing += _mainForm_FormClosing;
@@ -126,7 +128,9 @@ namespace FinDownForm
         private void _issuersManager_FileDownloaded()
         {
             _downloadedCount++;
-            _mainForm.SetDownloadedCount(_downloadedCount);
+            if (_fFormNotClosed) {
+                _mainForm.SetDownloadedCount(_downloadedCount);
+            }
         }
         private void _issuersManager_DownloadComplete(bool fCancelled) {
             var msg = fCancelled ? "Загрузка прервана" : "Загрузка завершена";
@@ -138,6 +142,7 @@ namespace FinDownForm
         private void _mainForm_FormClosing(object sender, EventArgs e)
         {
             _issuersManager.DowloadCancel();
+            _fFormNotClosed = false;
         }
         private void _mainForm_SaveSettings() {
             var ichartsPath = _mainForm.IchartsPath;
@@ -174,7 +179,9 @@ namespace FinDownForm
 
 
         private void Logging(string message) {
-            _mainForm.Logging(message);
+            if (_fFormNotClosed) {
+                _mainForm.Logging(message);
+            }
         }
     }
 }

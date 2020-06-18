@@ -15,7 +15,7 @@ namespace FinDownForm {
             butIChartsUpdate.Click += ButIChartsUpdate_Click;
 
             tabControl1.Deselected += TabControl1_Deselected;
-            FormClosing += MainForm_FormClosing;
+            FormClosed += MainForm_FormClosed;
 
             butChooseICharts.Click += ButChooseICharts_Click;
             butHistDataDirChoose.Click += ButHistDataDirChoose_Click;
@@ -25,7 +25,7 @@ namespace FinDownForm {
             SetInitialValues();
         }
 
-        
+
         private void DtpPeriodTo_ValueChanged(object sender, EventArgs e) {
             DtPeriodTo = dtpPeriodTo.Value;
         }
@@ -111,10 +111,11 @@ namespace FinDownForm {
             }
         }
 
-        private void MainForm_FormClosing(object sender, EventArgs e)
+        private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
         {
             FormClosing?.Invoke(sender, EventArgs.Empty);
         }
+
 
         #endregion
 

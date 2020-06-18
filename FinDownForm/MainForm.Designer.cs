@@ -46,6 +46,7 @@
             this.butSearch = new System.Windows.Forms.Button();
             this.chFutures = new System.Windows.Forms.CheckBox();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.butCancel = new System.Windows.Forms.Button();
             this.chAllTime = new System.Windows.Forms.CheckBox();
             this.dtpPeriodFrom = new System.Windows.Forms.DateTimePicker();
             this.dtpPeriodTo = new System.Windows.Forms.DateTimePicker();
@@ -55,7 +56,6 @@
             this.chExactMatchName = new System.Windows.Forms.CheckBox();
             this.fldLog = new System.Windows.Forms.TextBox();
             this.tabPage2 = new System.Windows.Forms.TabPage();
-            this.butSaveSettings = new System.Windows.Forms.Button();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
             this.butHistDataDirChoose = new System.Windows.Forms.Button();
             this.fldHistDataDir = new System.Windows.Forms.TextBox();
@@ -66,7 +66,6 @@
             this.butChooseICharts = new System.Windows.Forms.Button();
             this.fldIChartsPath = new System.Windows.Forms.TextBox();
             this.label5 = new System.Windows.Forms.Label();
-            this.butCancel = new System.Windows.Forms.Button();
             this.statusStrip1.SuspendLayout();
             this.tabControl1.SuspendLayout();
             this.tabPage1.SuspendLayout();
@@ -258,6 +257,15 @@
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "downloads";
             // 
+            // butCancel
+            // 
+            this.butCancel.Location = new System.Drawing.Point(248, 48);
+            this.butCancel.Name = "butCancel";
+            this.butCancel.Size = new System.Drawing.Size(75, 23);
+            this.butCancel.TabIndex = 12;
+            this.butCancel.Text = "Cancel";
+            this.butCancel.UseVisualStyleBackColor = true;
+            // 
             // chAllTime
             // 
             this.chAllTime.AutoSize = true;
@@ -337,7 +345,6 @@
             // 
             // tabPage2
             // 
-            this.tabPage2.Controls.Add(this.butSaveSettings);
             this.tabPage2.Controls.Add(this.groupBox3);
             this.tabPage2.Controls.Add(this.groupBox4);
             this.tabPage2.Location = new System.Drawing.Point(4, 22);
@@ -347,16 +354,6 @@
             this.tabPage2.TabIndex = 1;
             this.tabPage2.Text = "settings";
             this.tabPage2.UseVisualStyleBackColor = true;
-            // 
-            // butSaveSettings
-            // 
-            this.butSaveSettings.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.butSaveSettings.Location = new System.Drawing.Point(345, 141);
-            this.butSaveSettings.Name = "butSaveSettings";
-            this.butSaveSettings.Size = new System.Drawing.Size(75, 23);
-            this.butSaveSettings.TabIndex = 12;
-            this.butSaveSettings.Text = "Save";
-            this.butSaveSettings.UseVisualStyleBackColor = true;
             // 
             // groupBox3
             // 
@@ -466,15 +463,6 @@
             this.label5.TabIndex = 0;
             this.label5.Text = "path";
             // 
-            // butCancel
-            // 
-            this.butCancel.Location = new System.Drawing.Point(248, 48);
-            this.butCancel.Name = "butCancel";
-            this.butCancel.Size = new System.Drawing.Size(75, 23);
-            this.butCancel.TabIndex = 12;
-            this.butCancel.Text = "Cancel";
-            this.butCancel.UseVisualStyleBackColor = true;
-            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -541,7 +529,6 @@
         private System.Windows.Forms.Button butChooseICharts;
         private System.Windows.Forms.TextBox fldIChartsPath;
         private System.Windows.Forms.Label label5;
-        private System.Windows.Forms.Button butSaveSettings;
         private System.Windows.Forms.CheckBox chMatchCase;
         private System.Windows.Forms.Button butCancel;
     }

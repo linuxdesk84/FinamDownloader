@@ -13,7 +13,9 @@ namespace FinDownForm {
             butDownload.Click += ButDownload_Click;
             butCancel.Click += ButCancel_Click;
             butIChartsUpdate.Click += ButIChartsUpdate_Click;
-            butSaveSettings.Click += ButSaveSettings_Click;
+
+            tabControl1.Deselected += TabControl1_Deselected;
+            FormClosing += MainForm_FormClosing;
 
             butChooseICharts.Click += ButChooseICharts_Click;
             butHistDataDirChoose.Click += ButHistDataDirChoose_Click;
@@ -21,16 +23,6 @@ namespace FinDownForm {
             chFutures.CheckedChanged += ChFutures_CheckedChanged;
 
             SetInitialValues();
-            FormClosing += MainForm_FormClosing;
-
-            tabControl1.Deselected += TabControl1_Deselected;
-        }
-
-        private void TabControl1_Deselected(object sender, TabControlEventArgs e)
-        {
-            if (e.TabPage == tabPage2) {
-                SaveSettings?.Invoke();
-            }
         }
 
         
@@ -107,13 +99,21 @@ namespace FinDownForm {
             DownloadCancelClick?.Invoke(sender, EventArgs.Empty);
         }
 
-
         private void ButIChartsUpdate_Click(object sender, EventArgs e) {
             UpdateIChartsClick?.Invoke(sender, EventArgs.Empty);
         }
 
-        private void ButSaveSettings_Click(object sender, EventArgs e) {
-            SaveSettings?.Invoke();
+        private void TabControl1_Deselected(object sender, TabControlEventArgs e)
+        {
+            if (e.TabPage == tabPage2)
+            {
+                SaveSettings?.Invoke();
+            }
+        }
+
+        private void MainForm_FormClosing(object sender, EventArgs e)
+        {
+            FormClosing?.Invoke(sender, EventArgs.Empty);
         }
 
         #endregion
@@ -220,10 +220,5 @@ namespace FinDownForm {
         public event Action SaveSettings;
 
         #endregion
-
-        private void MainForm_FormClosing(object sender, EventArgs e)
-        {
-            FormClosing?.Invoke(sender, EventArgs.Empty);
-        }
     }
 }

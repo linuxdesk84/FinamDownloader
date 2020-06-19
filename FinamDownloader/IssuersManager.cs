@@ -14,53 +14,84 @@ namespace FinamDownloader {
     /// Класс, выполняющий работу по загрузке и поиску эмитентов
     /// </summary>
     public class IssuersManager {
+        /// <summary>
+        /// Флаг отмены загрузки по требованию
+        /// </summary>
         private bool _fCancelled;
-        private IchartsData _ichartsData;
 
-        readonly DateTime _currentDt;
+        /// <summary>
+        /// распарсенный файл icharts.js
+        /// </summary>
+        private readonly IchartsData _ichartsData;
+
+        /// <summary>
+        /// текущее московское время
+        /// </summary>
+        private readonly DateTime _currentDt;
+
+        /// <summary>
+        /// Минимально возможная начальная точка
+        /// </summary>
         public DateTime DtPeriodMin { get; }
+
+        /// <summary>
+        /// Максимально возможная конечная точка
+        /// </summary>
         public DateTime DtPeriodMax { get; }
 
-
+        /// <summary>
+        /// Загрузчик
+        /// </summary>
         private readonly IDownloadService _downloadService;
 
-
-        private string _ichartsPath;
-
-        public string IchartsPath {
-            set {
-                var path = _ichartsPath;
-                _ichartsPath = value;
-                if (path != _ichartsPath) {
-                    _ichartsData.Load();
-                }
-
-
-            }
-        }
-
+        
+        /// <summary>
+        /// Задаем путь _ichartsData.ichartsPath.
+        /// При необходимости читаем файл charts.js заново
+        /// </summary>
         public void SetIchartsPath(string ichartsPath) {
             _ichartsData.IchartsPath = ichartsPath;
         }
 
 
+        /// <summary>
+        /// Возвращаем количество эммитентов
+        /// </summary>
         public int GetIssuersCount() {
             return _ichartsData.Issuers.Count;
         }
 
+        /// <summary>
+        /// Корневой каталог, куда будем загружать сделки
+        /// </summary>
         public string HistDataDir { get; set; }
 
+        /// <summary>
+        /// Сообщаем служебную информацию
+        /// </summary>
         public event Action<string> Inform;
+
+        /// <summary>
+        /// Сообщаем, что загружен новый файл
+        /// </summary>
         public event Action FileDownloaded;
+
+        /// <summary>
+        /// Сообщаем, что загрузка завершена
+        /// </summary>
         public event Action<bool> DownloadComplete;
 
         public IssuersManager(string ichartsPath, string histDataDir) {
             _ichartsData = new IchartsData(ichartsPath);
-            _ichartsData.Inform += _ichartssData_Inform;
+            _ichartsData.Inform += IchartssData_Inform;
             HistDataDir = histDataDir;
 
+            
+            //HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\Windows NT\CurrentVersion\Time Zones\Russian Standard Time
+            var msk = TimeZoneInfo.FindSystemTimeZoneById("Russian Standard Time");
+
             // текущее московское время
-            _currentDt = DateTime.Now.AddHours(-2); // todo у Сани это работать будет не правильно
+            _currentDt = TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.Local, msk);
 
             // самая ранняя дата, доступная в finam
             DtPeriodMin = new DateTime(1979, 1, 1);
@@ -72,7 +103,10 @@ namespace FinamDownloader {
             _downloadService = new DownloadService();
         }
 
-        private void _ichartssData_Inform(string message) {
+        /// <summary>
+        /// Проброс события IchartsData.Inform
+        /// </summary>
+        private void IchartssData_Inform(string message) {
             Inform?.Invoke(message);
         }
 
@@ -169,11 +203,17 @@ namespace FinamDownloader {
             return issuersList;
         }
 
-
+        /// <summary>
+        /// Отмена загрузки
+        /// </summary>
         public void DowloadCancel() {
             _fCancelled = true;
         }
 
+        /// <summary>
+        /// Метод, вызываемый при создании нового потока из GUI
+        /// </summary>
+        /// <param name="obj"></param>
         public void DownloadIssuers(object obj) {
             _fCancelled = false;
 
@@ -333,22 +373,20 @@ namespace FinamDownloader {
                 Inform?.Invoke($@"Загружаем {futName}, диапазон: {futDateFrom} - {futDateTo}");
 
 
-                var fb = DownloadIssuer(futName, fut.Market, fut.Id,
+                DownloadIssuer(futName, fut.Market, fut.Id,
                     isFutures, futDateFrom, futDateTo, futBaseDir, fOverwrite);
 
                 if (_fCancelled) {
                     return;
                 }
-
-                if (!fb) {
-                    //return;
-                }
-            }
+            } // foreach
         }
 
 
-
-        private bool DownloadIssuer(string issuerName, string issuerMarket, string issuerId,
+        /// <summary>
+        /// Загружаем файл D1, и читая его загружаем тики по отдельным датам
+        /// </summary>
+        private void DownloadIssuer(string issuerName, string issuerMarket, string issuerId,
             bool isFutures, DateTime dtFrom, DateTime dtTo, string baseDir, bool fOverwrite)
         {
             // директория, куда будем сохранять загруженные данные
@@ -379,7 +417,7 @@ namespace FinamDownloader {
                 if (isFutures && !fOverwrite && File.Exists(fileD1Path) &&
                     File.GetLastWriteTime(fileD1Path) >= dtTo && new FileInfo(fileD1Path).Length > 0) {
                     Inform?.Invoke($@"Фьючерс {issuerName} уже загружен");
-                    return true;
+                    return ;
                 }
 
                 var url = FinDown.GetUrl(dtFrom, dtTo, fileD1Name,
@@ -389,16 +427,16 @@ namespace FinamDownloader {
                 while (!_downloadService.TryDownload(url, fileD1Path, out var strErr)) {
                     Inform?.Invoke(strErr);
                     if (_fCancelled) {
-                        return false;
+                        return ;
                     }
                 }
 
                 // если полученный файл пустой, то ошибка
                 var length = new FileInfo(fileD1Path).Length;
                 if (length == 0) {
-                    //File.Delete(fileD1Path);
-                    Inform?.Invoke($@"Пропускаем загрузку: получен пустой файл с датами: {fileD1Path}");
-                    return false;
+                    File.Delete(fileD1Path);
+                    Inform?.Invoke($@"Пропускаем загрузку: получен пустой файл с датами");
+                    return;
                 }
 
                 Inform?.Invoke($@"Загружен файл {fileD1Path}.");
@@ -407,13 +445,7 @@ namespace FinamDownloader {
                 // читаем futD1Path, и скачиваем тики за каждую доступную дату
                 DownloadTicksFromD1File(urlsWriter, issuerDir, fileD1Path,
                     issuerName, issuerMarket, issuerId, fOverwrite, isFutures);
-
-                if (_fCancelled) {
-                    return true;
-                }
             }
-
-            return true;
         }
 
 

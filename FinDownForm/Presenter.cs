@@ -10,7 +10,7 @@ namespace FinDownForm
         private readonly MessageService _messageService;
         private readonly IssuersManager _issuersManager;
         private readonly ManagerIni _managerIni;
-        private readonly IchartsDownloader _ichartsDownloader;
+        private readonly IIchartsDownloader _ichartsDownloader;
 
         private int _downloadedCount;
         private bool _fFormNotClosed;

@@ -6,6 +6,9 @@ using IniParser.Model;
 
 namespace FinamDownloader
 {
+    /// <summary>
+    /// Класс, выполняющий загрузку и сохранение настроек программы в .ini файл
+    /// </summary>
     public class ManagerIni {
         private readonly string _fileIniPath;
         public Settings FdSettings { get; }
@@ -23,10 +26,17 @@ namespace FinamDownloader
             }
         }
 
+        /// <summary>
+        /// Информируем использующий класс о произошедшем внутри Settings событии
+        /// </summary>
+        /// <param name="message"></param>
         private void FdSettings_Inform(string message) {
             Inform?.Invoke(message);
         }
 
+        /// <summary>
+        /// Загружаем настройки из файла
+        /// </summary>
         private void LoadSettings() {
             //Create an instance of a ini file parser
             FileIniDataParser fileIniData = new FileIniDataParser();

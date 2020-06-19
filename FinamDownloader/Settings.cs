@@ -2,6 +2,9 @@
 using System.IO;
 
 namespace FinamDownloader {
+    /// <summary>
+    /// Настройки программы.
+    /// </summary>
     public class Settings {
         private string _histDataDir;
         private string _ichartsPath;

@@ -6,6 +6,10 @@ using System.Threading.Tasks;
 
 namespace FinamDownloader
 {
+    /// <summary>
+    /// Содержит все параметры, необходимые для запуска скачивания эмитента.
+    /// Предназначен для передачи параметров дочернему потоку
+    /// </summary>
     public class DownloadParams
     {
         public DownloadParams(string issuerName, string issuerMarket, string issuerId, bool fExactMatchName, bool fMatchCase, bool isFutures, bool fAllTime, DateTime dtPeriodFrom, DateTime dtPeriodTo, bool fOverwrite, bool fSkipUnfinished)

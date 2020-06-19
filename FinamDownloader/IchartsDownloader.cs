@@ -8,9 +8,11 @@ using System.Net;
 
 
 namespace FinamDownloader {
-    interface IIchartsDownloader {
+    public interface IIchartsDownloader {
         bool TryDownloadAndMark(out string message);
         bool TryAutoUpdate(out string message);
+
+        void SetIchartsPath(string ichartsPath);
     }
 
 

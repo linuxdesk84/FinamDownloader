@@ -124,11 +124,64 @@ namespace FinDownEntity {
     /// </summary>
     public enum DataFormat {
         /// <summary>
+        /// TICKER, PER, DATE, TIME, OPEN, HIGH, LOW, CLOSE, VOL
+        /// </summary>
+        Candle_TP_DT_OHLC_V = 1,
+
+        /// <summary>
+        /// TICKER, PER, DATE, TIME, OPEN, HIGH, LOW, CLOSE
+        /// </summary>
+        Candle_TP_DT_OHLC = 2,
+
+        /// <summary>
+        /// TICKER, PER, DATE, TIME, CLOSE, VOL
+        /// </summary>
+        Candle_TP_DT_C_V = 3,
+
+        /// <summary>
+        /// TICKER, PER, DATE, TIME, CLOSE
+        /// </summary>
+        Candle_TP_DT_C = 4,
+
+        /// <summary>
+        /// Candle_DT_OHLC_V:
         /// DATE, TIME, OPEN, HIGH, LOW, CLOSE, VOL
         /// </summary>
         CandleOptimal = 5,
 
         /// <summary>
+        /// TICKER, PER, DATE, TIME, LAST, VOL
+        /// </summary>
+        Tick_TP_DT_LV = 6,
+
+        /// <summary>
+        /// TICKER, DATE, TIME, LAST, VOL
+        /// </summary>
+        Tick_T_DT_LV = 7,
+
+        /// <summary>
+        /// TICKER, DATE, TIME, LAST
+        /// </summary>
+        Tick_T_DT_L = 8,
+
+        /// <summary>
+        /// DATE, TIME, LAST, VOL
+        /// </summary>
+        Tick_DT_LV = 9,
+
+        /// <summary>
+        /// DATE, TIME, LAST
+        /// </summary>
+        Tick_DT_L = 10,
+
+        /// <summary>
+        /// DATE, TIME, LAST, VOL, ID
+        /// </summary>
+        Tick_DT_LV_I = 11,
+
+
+        /// <summary>
+        /// Candle_DT_OHLC_V: 
         /// DATE, TIME, LAST, VOL, ID, OPER
         /// </summary>
         TickOptimal = 12,
@@ -137,7 +190,6 @@ namespace FinDownEntity {
            В то же время, при запросе тиковых данных через сайт, сгенерированный url содержит "datf=12".
            2019.08.24 экспериментально выяснил, что параметр datf может быть от 1 до 12, все остальные
            варианты (перебрал от 0 до 18) аналогичны datf=10 (но при этом отсутствует заголовок (header)).
-           Оставил только 2 формата, потому что использовать другие нет смысла.
            
            Полная картина:
            1  TICKER, PER, DATE, TIME, OPEN, HIGH, LOW, CLOSE, VOL -- C

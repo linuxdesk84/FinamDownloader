@@ -124,9 +124,10 @@ namespace FinDownEntity {
     /// </summary>
     public enum DataFormat {
         /// <summary>
+        /// (Candle_TP_DT_OHLC_V)
         /// TICKER, PER, DATE, TIME, OPEN, HIGH, LOW, CLOSE, VOL
         /// </summary>
-        Candle_TP_DT_OHLC_V = 1,
+        CandleAllParam = 1,
 
         /// <summary>
         /// TICKER, PER, DATE, TIME, OPEN, HIGH, LOW, CLOSE
@@ -144,10 +145,9 @@ namespace FinDownEntity {
         Candle_TP_DT_C = 4,
 
         /// <summary>
-        /// Candle_DT_OHLC_V:
         /// DATE, TIME, OPEN, HIGH, LOW, CLOSE, VOL
         /// </summary>
-        CandleOptimal = 5,
+        Candle_DT_OHLC_V = 5,
 
         /// <summary>
         /// TICKER, PER, DATE, TIME, LAST, VOL
@@ -170,9 +170,10 @@ namespace FinDownEntity {
         Tick_DT_LV = 9,
 
         /// <summary>
+        /// (Tick_DT_L)
         /// DATE, TIME, LAST
         /// </summary>
-        Tick_DT_L = 10,
+        TickMinimal = 10,
 
         /// <summary>
         /// DATE, TIME, LAST, VOL, ID
@@ -181,7 +182,7 @@ namespace FinDownEntity {
 
 
         /// <summary>
-        /// Candle_DT_OHLC_V: 
+        /// (Candle_DT_OHLC_V)
         /// DATE, TIME, LAST, VOL, ID, OPER
         /// </summary>
         TickOptimal = 12,

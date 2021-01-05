@@ -46,6 +46,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Collector.cs" />
     <Compile Include="Enums.cs" />
     <Compile Include="FinDown.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

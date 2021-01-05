@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 
@@ -103,21 +104,27 @@ namespace FinDownEntity {
         /// </summary>
         /// <param name="sDate">строка даты</param>
         /// <returns></returns>
-        public static DateFormat TryGetDateFormat(string sDate) {
+        public static bool TryGetDateFormat(string sDate, out DateFormat df) {
+            // присваиваем любое значение
+            df = DateFormat.YYYYMMDD;
+
             Assert.IsTrue(!string.IsNullOrWhiteSpace(sDate)
                           && (sDate.Length == 6 || sDate.Length == 8));
 
             if (sDate.Length == 6) {
-                // при длине 6, считаем что форматы "ГГММДД" и "ДДММГГ" не различимы
+                // при длине 6, считаем что форматы "ГГММДД" и "ДДММГГ" - программно не различимы
                 Assert.IsTrue(false);
+                return false;
             }
 
             if (sDate.Contains('/')) {
-                // считаем что формат "ДД/ММ/ГГ" более вероятен, чем  "ММ/ДД/ГГ"
-                return DateFormat.DD_MM_YY;
+                // считаем что форматы "ДД/ММ/ГГ" и "ММ/ДД/ГГ" - программно не различимы
+                Assert.IsTrue(false);
+                return false;
             }
 
-            return DateFormat.YYYYMMDD;
+            df = DateFormat.YYYYMMDD;
+            return true;
         }
 
         /// <summary>
@@ -125,13 +132,13 @@ namespace FinDownEntity {
         /// </summary>
         /// <param name="sTime">строка времени</param>
         /// <returns></returns>
-        public static TimeFormat TryGetTimeFormat(string sTime) {
+        public static bool TryGetTimeFormat(string sTime, out TimeFormat tf) {
+            tf = TimeFormat.HHMMSS;
             Assert.IsTrue(!string.IsNullOrWhiteSpace(sTime));
             var len = sTime.Length;
 
             Assert.IsTrue(len == 4 || len == 5 || len == 6 || len == 8);
 
-            TimeFormat tf;
             switch (len) {
                 case 6:
                     tf = TimeFormat.HHMMSS;
@@ -147,7 +154,7 @@ namespace FinDownEntity {
                     break;
             }
 
-            return tf;
+            return true;
         }
 
         /// <summary>
@@ -206,7 +213,11 @@ namespace FinDownEntity {
             var f3 = int.TryParse(sD, out var d);
             Assert.IsTrue(f1 && f2 && f3);
 
-            y += y < 70 ? 2000 : 1900;
+            if (y < 1900) {
+                y += y < 70 ? 2000 : 1900;
+            }
+
+            
 
             return new DateTime(y, m, d);
         }
@@ -296,7 +307,7 @@ namespace FinDownEntity {
         public static string GetUrl(DateTime dtF, DateTime dtT, string rezultFn,
             string code, string market, string id,
             ETimeFrame tf,
-            DataFormat datf = DataFormat.CandleOptimal,
+            DataFormat datf = DataFormat.Candle_DT_OHLC_V,
             DateFormat dtf = DateFormat.DD_MM_YY,
             TimeFormat tmf = TimeFormat.HH_MM_SS,
             CandleTime ct = CandleTime.Open,
@@ -344,6 +355,36 @@ namespace FinDownEntity {
                       $"at={(int)at}";
 
             return url;
+        }
+
+        public static ETimeFrame GetETimeFrameFromPer(string per) {
+            List<string> pers = new[] {
+                "0",  // tick
+                "1",  // M1
+                "5",  // M5
+                "10", // M10
+                "15", // M15
+                "30", // M30
+                "60", // H1
+                "D",  // day
+                "W",  // week
+                "M",  // month
+            }.ToList();
+
+            Assert.IsTrue(pers.Contains(per));
+
+
+            int idx = -1;
+            for (int i = 0; i < pers.Count; i++) {
+                if (pers[i] == per) {
+                    idx = i;
+                    break;
+                }
+            }
+            Assert.IsTrue(idx >= 0);
+
+            return (ETimeFrame) (idx + 1);
+
         }
     }
 }

@@ -188,8 +188,7 @@ namespace FinDownForm {
 
         public void FlipButtons(bool fEnable)
         {
-            Action action = () =>
-            {
+            Action action = () => {
                 butDownload.Enabled = fEnable;
                 butSearch.Enabled = fEnable;
                 tabPage2.Enabled = fEnable;

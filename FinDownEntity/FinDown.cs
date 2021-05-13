@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
+using TrEngine.HistoryData;
 
 namespace FinDownEntity {
     public static class FinDown {
@@ -283,6 +284,85 @@ namespace FinDownEntity {
         /// <returns></returns>
         public static DateTime GetTms(string sDate, DateFormat df, string sTime, TimeFormat tf) {
             return ParseDate(sDate, df) + ParseTime(sTime, tf);
+        }
+
+        //public ParseStringToTick(string In,
+        //out DateTime tms, out decimal price, out int volume, out Direction direction)
+        //{
+        //    //20170307,095931,162.410000000,10,Sell,0,
+        //    var sIn = In.Split(',');
+
+        //    var year = Convert.ToInt32(sIn[0].Substring(0, 4));
+        //    var month = Convert.ToInt32(sIn[0].Substring(4, 2));
+        //    var day = Convert.ToInt32(sIn[0].Substring(6, 2));
+
+        //    var hour = Convert.ToInt32(sIn[1].Substring(0, 2));
+        //    var minute = Convert.ToInt32(sIn[1].Substring(2, 2));
+        //    var second = Convert.ToInt32(sIn[1].Substring(4, 2));
+
+        //    Tms = new DateTime(year, month, day, hour, minute, second);
+
+        //    Price = Convert.ToDecimal(sIn[2].Replace(".", ","));
+        //    Volume = Convert.ToInt32(sIn[3]);
+
+        //    Direction = sIn[4] == "Sell" ? Direction.Sell : Direction.Buy;
+        //}
+
+        public static bool ParseStringToTick(string str, char sep, DataFormat dataF, DateFormat df, TimeFormat tf,
+            out DateTime tms, out decimal price, out int volume, out long id, out Direction direction)
+        {
+            int dfNum = (int) dataF;
+            Assert.IsTrue(6 <= dfNum && dfNum <= 12);
+
+            string[] buf = str.Split(sep);
+            Assert.IsTrue(dfNum == 6  && buf.Length == 6 || // 6  TICKER, PER, DATE, TIME, LAST, VOL              - 6 
+                          dfNum == 7  && buf.Length == 5 || // 7  TICKER,      DATE, TIME, LAST, VOL              - 5 
+                          dfNum == 8  && buf.Length == 4 || // 8  TICKER,      DATE, TIME, LAST                   - 4 
+                          dfNum == 9  && buf.Length == 4 || // 9               DATE, TIME, LAST, VOL              - 4 
+                          dfNum == 10 && buf.Length == 3 || // 10              DATE, TIME, LAST                   - 3 
+                          dfNum == 11 && buf.Length == 5 || // 11              DATE, TIME, LAST, VOL, ID          - 5 
+                          dfNum == 12 && buf.Length == 6);  // 12              DATE, TIME, LAST, VOL, ID, OPER    - 6
+
+            int shift = 0;
+            if (6 <= dfNum && dfNum <= 8) {
+                string ticker = buf[0];
+                shift++;
+
+                if (dfNum == 6) {
+                    string per = buf[1];
+                    shift++;
+                }
+            }
+
+            string sDate = buf[0 + shift];
+            string sTime = buf[1 + shift];
+            tms = GetTms(sDate, df, sTime, tf);
+
+            string sPrice = buf[2 + shift];
+            price = Convert.ToDecimal(sPrice.Replace(".", ","));
+
+            string sVol = dfNum == 8 || dfNum == 10 ? "-1" : buf[3 + shift];
+            volume = Convert.ToInt32(sVol);
+
+            string sId = dfNum <= 10 ? "-1" : buf[4 + shift];
+            id = Convert.ToInt64(sId);
+
+            direction = dfNum != 12 ? Direction.None : /*EngineConvert.*/ConvertToDirection(buf[5 + shift]);
+            return true;
+        }
+
+        private static Direction ConvertToDirection(string str) {
+            Assert.IsTrue(str == "" || str == "B" || str == "S" || str == "Buy" || str == "Sell");
+
+            if (str == "B" || str == "Buy") {
+                return Direction.Buy;
+            }
+
+            if (str == "S" || str == "Sell") {
+                return Direction.Sell;
+            }
+
+            return Direction.None;
         }
 
 
